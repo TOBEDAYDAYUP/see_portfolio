@@ -2,8 +2,6 @@ import { NextResponse } from "next/server";
 import { loadPaperPortfolio } from "../../../../lib/alpaca/server";
 import type { AlpacaPortfolioResult } from "../../../../lib/alpaca/types";
 
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
 const privateHeaders = { "Cache-Control": "private, no-store, max-age=0" };
 
 /** Local-development only until user login and authorization are implemented.
