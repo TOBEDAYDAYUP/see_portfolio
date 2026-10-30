@@ -30,6 +30,8 @@ function dateInNewYork(iso:string):string{
 }
 export function marketDateNY(iso:string):string{return dateInNewYork(iso);}
 const isoDaysBefore=(date:Date,days:number)=>new Date(date.getTime()-days*86400000).toISOString();
+const tradingCalendarStart=(endNYDate:string,days:number)=>
+  new Date(Date.parse(endNYDate+"T00:00:00.000Z")-days*86400000).toISOString().slice(0,10);
 const previousNYDate=(now:Date)=>{
   const [year,month,day]=dateInNewYork(now.toISOString()).split("-").map(Number);
   return new Date(Date.UTC(year,month-1,day-1)).toISOString().slice(0,10);
@@ -45,8 +47,8 @@ export function planStockChart(range:ChartRange,now=new Date()):ChartRequest{
   switch(range){
     case "1D":return {range,interval:"5Min",start:isoDaysBefore(safeNow,8),end:safeNow.toISOString(),intraday:true};
     case "5D":return {range,interval:"15Min",start:isoDaysBefore(safeNow,16),end:safeNow.toISOString(),intraday:true};
-    case "1M":return {range,interval:"1Day",start:isoDaysBefore(now,45).slice(0,10),end:endDate,intraday:false};
-    case "1Y":return {range,interval:"1Day",start:isoDaysBefore(now,375).slice(0,10),end:endDate,intraday:false};
+    case "1M":return {range,interval:"1Day",start:tradingCalendarStart(endDate,30),end:endDate,intraday:false};
+    case "1Y":return {range,interval:"1Day",start:tradingCalendarStart(endDate,365),end:endDate,intraday:false};
     case "ALL":return {range,interval:"1Week",start:"2016-01-01",end:endDate,intraday:false};
   }
 }
