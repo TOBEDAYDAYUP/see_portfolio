@@ -2,7 +2,19 @@
 
 A lightweight investment research prototype built with **Next.js 16, React 19, TypeScript, and Tailwind CSS 4**.
 
-> **Data notice:** Holdings can now read directly from your Alpaca **Paper Trading** account after local configuration. Other research views and news remain demo placeholders. No real-money trading, order execution, AI scoring, or notifications are connected.
+> **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
+
+## Company Fundamentals v0.1 — official SEC annual filings
+
+Research → Stock Reports now contains an independent Company Fundamentals panel. It reads **actual SEC EDGAR 10-K US-GAAP XBRL company facts** for supported US public issuers: annual revenue, net income, operating cash flow, reported capital spending, annual free cash flow (OCF minus capex), fiscal-year revenue growth, operating/net margins, assets, liabilities and cash. A year-end comparison table and the official SEC XBRL source URL are provided.
+
+**One-time optional SEC setup:** the SEC requires requests to identify the client and include a real email contact. Set `SEC_USER_AGENT="SEE Portfolio Research your-email@domain.com"` in ignored local `.env.local`, using an email that you control; restart `npm run dev`. This is not an API key and no third-party account is necessary. Without it, the Fundamentals panel displays **SEC data setup required**; all existing Alpaca portfolio, Research prices, charts, risk and news still work.
+
+The backend caches the SEC ticker→CIK index for 24h and SEC annual company summaries for 1h; API route `/api/research/fundamentals?symbol=AAPL` is read-only and disabled outside local development pending user authentication. Its responses contain only selected, validated annual metrics, not the entire large SEC payload.
+
+**Data quality:** only full-year 10-K/10-K-A US-GAAP facts with approximately 330–380-day measurement spans appear as annual income/cash flow. 10-Q and year-to-date interim facts are excluded, 10-K instant balance sheet items are handled separately. Recent issuer restatements and missing taxonomy concepts can affect figures; missing inputs display —, never invented numbers. US-listed ETFs and non-US issuers without comparable US-GAAP 10-K data may not be supported. This is **not** a valuation or a 12-month forecast.
+
+Testing: `node --experimental-strip-types --test tests/*.test.mjs` covers financial-year filtering, restated values, sources, ratios, capex, and missing data.
 
 ## Development
 
