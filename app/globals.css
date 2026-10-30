@@ -744,3 +744,99 @@ body {
     transition: background-color 240ms ease, border-color 240ms ease, color 240ms ease, box-shadow 240ms ease;
   }
 }
+
+
+/* SVG REFRACTION — middle-tier glass: distort only the frosted surface,
+   never the chart, its legend, interactive controls, or financial numbers.
+   Chromium supports SVG displacement in backdrop-filter; unsupported
+   engines continue to display the original frosted glass underneath. */
+.see-content::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(111deg, transparent 10%, rgba(67, 207, 212, .13) 17%, transparent 23%),
+    linear-gradient(155deg, transparent 31%, rgba(90, 133, 220, .12) 37%, transparent 44%),
+    radial-gradient(ellipse 64% 22% at 76% 43%, rgba(37, 179, 207, .20), transparent 81%);
+  filter: blur(12px);
+}
+.glass-refract {
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 95% 72% at 95% 1%, rgba(129, 240, 233, .13), transparent 78%),
+    linear-gradient(146deg, rgba(44, 82, 108, .59), rgba(15, 33, 55, .57) 72%, rgba(28, 63, 88, .59));
+  border-color: rgba(205, 252, 253, .38);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, .50),
+    inset 1px 0 0 rgba(231, 255, 255, .21),
+    inset -1px 0 0 rgba(157, 240, 234, .13),
+    inset 0 -1.5px 0 rgba(116, 235, 229, .24),
+    0 24px 57px -26px rgba(0, 6, 25, .81),
+    0 0 35px -28px rgba(114, 245, 233, .29);
+}
+.glass-refract > * {
+  position: relative;
+  z-index: 1;
+}
+.glass-refract::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  /* Static spectral rim + moving optical distortion underneath. */
+  background:
+    linear-gradient(165deg, rgba(225,255,255,.16), rgba(226,255,255,.025) 28%, transparent 46%),
+    radial-gradient(ellipse 70% 21% at var(--glass-x, 20%) var(--glass-y, 5%), rgba(223,255,255,.16), transparent 82%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.85) 24%, rgba(0,0,0,.28) 53%, transparent 78%);
+  mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.85) 24%, rgba(0,0,0,.28) 53%, transparent 78%);
+  -webkit-backdrop-filter: blur(8px) saturate(150%);
+  backdrop-filter: blur(8px) saturate(150%);
+  opacity: .88;
+  transition: opacity 280ms ease;
+}
+@supports (backdrop-filter: url("#see-liquid-refraction")) {
+  .glass-refract::after {
+    backdrop-filter: url("#see-liquid-refraction") blur(7px) saturate(145%);
+    -webkit-backdrop-filter: url("#see-liquid-refraction") blur(7px) saturate(145%);
+  }
+}
+.glass-refract:hover::after,
+.glass-refract:focus-within::after {
+  opacity: 1;
+}
+.see-shell[data-theme="light"] .see-content::before {
+  background:
+    linear-gradient(111deg, transparent 11%, rgba(34, 159, 191, .17) 19%, transparent 24%),
+    linear-gradient(155deg, transparent 30%, rgba(133, 149, 215, .17) 38%, transparent 43%),
+    radial-gradient(ellipse 68% 23% at 77% 42%, rgba(75, 168, 204, .18), transparent 83%);
+}
+.see-shell[data-theme="light"] .glass-refract {
+  background:
+    radial-gradient(ellipse 92% 75% at 89% 0%, rgba(205, 244, 249, .27), transparent 80%),
+    linear-gradient(140deg, rgba(255,255,255,.64), rgba(234,249,254,.52) 55%, rgba(255,255,255,.59));
+  border-color: rgba(124, 190, 206, .60);
+  box-shadow:
+    inset 0 2px 0 #fff,
+    inset 1px 0 0 rgba(255,255,255,.82),
+    inset -1px 0 0 rgba(171,218,234,.27),
+    inset 0 -1px 0 rgba(107,167,189,.23),
+    0 25px 55px -24px rgba(58,111,150,.31);
+}
+.see-shell[data-theme="light"] .glass-refract::after {
+  background:
+    linear-gradient(165deg, rgba(255,255,255,.58), rgba(225,250,253,.08) 34%, transparent 54%),
+    radial-gradient(ellipse 74% 26% at var(--glass-x, 20%) var(--glass-y, 5%), rgba(255,255,255,.7), transparent 80%);
+}
+@media (max-width: 767px) {
+  .glass-refract::after {
+    -webkit-backdrop-filter: blur(8px) saturate(125%);
+    backdrop-filter: blur(8px) saturate(125%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .glass-refract::after { transition: none; }
+}
