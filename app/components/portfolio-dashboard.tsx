@@ -39,7 +39,7 @@ export default function PortfolioDashboard({section,currency="USD",onSettings}:{
           <button type="button" onClick={()=>setNotice("Holdings editing is under development.")} className="rounded-xl border border-white/10 bg-[#28384d] px-3 py-2.5 text-xs text-slate-200">Edit holdings</button>
         </div>
       </div>
-      {notice&&<div role="status" className="mb-4 flex justify-between rounded-xl bg-[#1e423f] px-4 py-3 text-sm text-emerald-100"><span>{notice}</span><button type="button" aria-label="Dismiss notice" onClick={()=>setNotice("")}>×</button></div> 
+      {notice&&<div role="status" className="mb-4 flex justify-between rounded-xl bg-[#1e423f] px-4 py-3 text-sm text-emerald-100"><span>{notice}</span><button type="button" aria-label="Dismiss notice" onClick={()=>setNotice("")}>×</button></div>}
       <div className="mb-5 rounded-xl border border-amber-300/20 bg-amber-300/5 px-4 py-3 text-xs leading-5 text-slate-300">
         <strong className="text-amber-200">DEMO VISUALIZATION</strong> · The stacked chart, displayed sample returns and radar placeholder below are illustrative only. Actual Alpaca Paper account balances, history and holdings appear in the separate section underneath.
       </div>
