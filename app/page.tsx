@@ -80,8 +80,9 @@ export default function Home() {
           type="button"
           aria-label="SEE Portfolio — return to Overview"
           title="Back to Overview"
+          aria-current={page === "overview" ? "page" : undefined}
           onClick={() => { setPage("overview"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-          className="group flex shrink-0 items-center gap-3 rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#83e3cd]"
+          className={"group flex shrink-0 items-center gap-3 rounded-xl border px-3 py-2 text-left transition-all duration-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#83e3cd] " + (page === "overview" ? "border-[#354c62] bg-[#233b50] shadow-[0_5px_16px_rgba(0,0,0,0.38)]" : "border-transparent hover:border-white/10 hover:bg-[#233b50] hover:shadow-[0_5px_16px_rgba(0,0,0,0.38)] active:bg-[#2b455e]")}
         >
           <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#7be2ca] text-xl font-black text-[#102139] transition group-hover:bg-[#a5f4e2]">S.</span>
           <span className="flex flex-col">
