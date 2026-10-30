@@ -1,5 +1,5 @@
 import "server-only";
-import type { AlpacaPortfolioResult, AlpacaPosition, PortfolioHistoryPoint } from "./types";
+import type { AlpacaPortfolioResult, AlpacaPosition, PortfolioHistoryPoint, AnnualPaperPerformance } from "./types";
 
 /** This application only permits the Alpaca PAPER host. No live trading host or order routes. */
 const PAPER_ORIGIN = "https://paper-api.alpaca.markets";
@@ -71,16 +71,47 @@ function parseHistory(raw: unknown): PortfolioHistoryPoint[] {
     return timestamp !== null && equity !== null && equity >= 0 ? [{ timestamp, equity }] : [];
   });
 }
+function parseAnnualPerformance(raw: unknown): AnnualPaperPerformance {
+  const missing: AnnualPaperPerformance = {
+    available: false, daysCovered: null, completeYear: false,
+    profitLoss: null, profitLossPct: null,
+  };
+  if (!isObject(raw) || !Array.isArray(raw.timestamp)
+    || !Array.isArray(raw.profit_loss) || !Array.isArray(raw.profit_loss_pct)) return missing;
+  const timestamps: unknown[] = raw.timestamp;
+  const profitLosses: unknown[] = raw.profit_loss;
+  const profitLossPcts: unknown[] = raw.profit_loss_pct;
+  if (!timestamps.length) return missing;
+  const validDates = timestamps.map(asNumber).filter((n): n is number => n !== null);
+  if (validDates.length < 2) return missing;
+  const daysCovered = Math.round((validDates[validDates.length-1] - validDates[0]) / 86400);
+  // Alpaca API's yearly window can contain less than a year of account history.
+  // We distinguish a full 12-month summary from an available-to-date partial period.
+  const finalIndex = timestamps.length - 1;
+  const profitLoss = asNumber(profitLosses[finalIndex]);
+  const profitLossPct = asNumber(profitLossPcts[finalIndex]);
+  return {
+    available: profitLoss !== null,
+    daysCovered: Math.max(0, daysCovered),
+    completeYear: daysCovered >= 330,
+    profitLoss,
+    profitLossPct,
+  };
+}
+
 export async function loadPaperPortfolio(): Promise<AlpacaPortfolioResult> {
   const keyId = process.env.ALPACA_PAPER_KEY_ID?.trim();
   const secretKey = process.env.ALPACA_PAPER_SECRET_KEY?.trim();
   if (!keyId || !secretKey) return { status: "not_configured" };
 
   try {
-    const [accountRaw, positionsRaw, historyResult] = await Promise.all([
+    const [accountRaw, positionsRaw, historyResult, annualHistoryResult] = await Promise.all([
       alpacaGet("/v2/account", keyId, secretKey),
       alpacaGet("/v2/positions", keyId, secretKey),
       alpacaGet("/v2/account/portfolio/history?period=1M&timeframe=1D", keyId, secretKey)
+        .then((value) => ({ ok: true as const, value }))
+        .catch(() => ({ ok: false as const })),
+      alpacaGet("/v2/account/portfolio/history?period=1A&timeframe=1D", keyId, secretKey)
         .then((value) => ({ ok: true as const, value }))
         .catch(() => ({ ok: false as const })),
     ]);
@@ -108,6 +139,7 @@ export async function loadPaperPortfolio(): Promise<AlpacaPortfolioResult> {
       positions,
       history: historyResult.ok ? parseHistory(historyResult.value) : [],
       historyAvailable: historyResult.ok,
+      annualPerformance: annualHistoryResult.ok ? parseAnnualPerformance(annualHistoryResult.value) : parseAnnualPerformance(null),
     };
   } catch (error: unknown) {
     const code = error instanceof AlpacaUpstreamError ? error.code : "unavailable";
