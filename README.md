@@ -49,6 +49,7 @@ app/
     portfolio/paper-equity-chart.tsx  # One actual daily paper equity chart
     settings/alpaca-connection.tsx     # Test connection + instructions
     portfolio/alpaca-portfolio.tsx     # Paper account, positions, equity history
+    portfolio/tail-risk.tsx           # Historical VaR95 / ES95 visualization
     portfolio/portfolio-research-metrics.tsx # 12M P/L, unrealized return, forecast placeholders
     portfolio/
       performance-chart.tsx           # Sample performance SVG
@@ -121,6 +122,23 @@ npm run build
 ```
 
 Unit tests cover single-stock concentration, multi-stock HHI, sample volatility, peak-to-trough drawdown and insufficient price data.
+
+## Risk Engine v0.2 — Historical VaR & Expected Shortfall
+
+- **Historical VaR 95% (one day):** empirical loss threshold at the 5% worst modeled daily outcomes.
+- **Expected Shortfall 95% (one day):** average loss across the worst 5% of modeled daily outcomes; positive reported loss magnitudes are floored at zero.
+- `k = ceil(0.05 × n)`; use the k-th largest daily loss for VaR and the average of the k largest losses for ES. Both are shown as % of **currently invested long US equity exposure** and USD using current invested market value, **not** total account equity including cash.
+- Require **at least 200 aligned daily portfolio returns** (at least 10 tail outcomes). Historical market data lookback requests ~440 calendar days and up to 301 common daily closes; when incomplete, VaR/ES are deliberately unavailable.
+- Results describe a hypothetical buy-and-hold basket initialized using **today's** stock weights. These are **in-sample** tail statistics, NOT calibrated probabilities, guaranteed loss limits or actual historical account performance; do not interpret them as a backtested risk model.
+- VaR/ES calculations use the existing TypeScript Risk Engine and Alpaca's IEX daily stock bars. No additional services, subscriptions, API keys or languages are required for this milestone.
+
+Run both risk test suites with:
+
+```bash
+node --experimental-strip-types --test tests/*.test.mjs
+```
+
+**Later improvement:** walk-forward VaR exception backtesting, confidence calibration and stress scenarios before claiming any predictive accuracy.
 
 ## Planned integrations (not implemented)
 

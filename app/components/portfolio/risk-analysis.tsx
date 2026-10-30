@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { RiskApiResult } from "../../../lib/alpaca/risk-types";
 import type { RiskMetrics } from "../../../lib/analytics/risk";
+import TailRiskSection from "./tail-risk";
 
 type View = RiskApiResult | null;
 const pct=(value:number)=>value.toFixed(2)+"%";
@@ -64,6 +65,7 @@ function ConnectedAnalysis({data}:{data:Extract<RiskApiResult,{status:"connected
       <InfoCard title="Annualized volatility" value={m.annualizedVolatilityPct===null?"—":pct(m.annualizedVolatilityPct)} caption="Daily hypothetical portfolio returns · × √252"/>
       <InfoCard title="Maximum drawdown" value={m.maxDrawdownPct===null?"—":pct(m.maxDrawdownPct)} caption="Worst historical peak-to-trough loss in model"/>
     </div>
+    <TailRiskSection metrics={m}/>
     <div className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(280px,1fr)]">
       <section className="surface-panel rounded-2xl p-5 sm:p-6">
         <h2 className="text-lg font-semibold">Portfolio allocation</h2>
@@ -104,10 +106,11 @@ function ConnectedAnalysis({data}:{data:Extract<RiskApiResult,{status:"connected
       </section>
     </div>
     <div className="rounded-xl border border-white/10 bg-[#172338] p-4 text-xs leading-6 text-slate-400">
-      <strong className="text-slate-200">Methodology · v0.1</strong> — Uses split-adjusted IEX daily closing prices, aligned by common trading dates.
+      <strong className="text-slate-200">Methodology · v0.2</strong> — Uses split-adjusted IEX daily closing prices, aligned by common trading dates.
       Sample standard deviation of daily portfolio returns × √252; maximum drawdown from the normalized buy-and-hold index.
       IEX is one exchange, not the consolidated US market. Stock-only risk excludes cash, bonds, derivatives, shorts and FX.
-      Past volatility and drawdowns do not predict future loss.
+      VaR95 uses the threshold of the worst 5% of modeled daily losses; ES95 averages those tail losses when at least 200 daily returns exist.
+      Historical sample estimates are not backtested or guaranteed; actual losses can be higher.
     </div>
   </div>;
 }
@@ -127,7 +130,7 @@ export default function RiskAnalysis({onSettings}:{onSettings:()=>void}){
   return <div>
     <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
       <div><h2 className="text-xl font-semibold">Portfolio Risk Analysis</h2>
-        <p className="mt-1 text-sm text-slate-400">Exposure, concentration and historical risk · read-only</p></div>
+        <p className="mt-1 text-sm text-slate-400">Exposure, concentration, historical VaR & ES · read-only</p></div>
       <button type="button" disabled={loading} onClick={reload}
         className="rounded-xl border border-white/15 bg-[#28384d] px-4 py-2.5 text-xs font-semibold text-slate-200">
         {loading?"Calculating…":"↻ Refresh analysis"}
@@ -138,7 +141,7 @@ export default function RiskAnalysis({onSettings}:{onSettings:()=>void}){
     {data?.status==="empty"&&<div className="surface-panel rounded-2xl px-7 py-12 text-center">
       <h3 className="text-xl font-semibold">No open paper positions</h3>
       <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-400">
-        Your Alpaca Paper portfolio currently has no holdings. Weight, concentration, volatility and drawdown
+        Your Alpaca Paper portfolio currently has no holdings. Weight, concentration, volatility, VaR, ES and drawdown
         will be calculated when qualifying US stock positions are present. No demo risk figures are displayed.
       </p>
       <span className="mt-5 inline-block rounded-full border border-white/10 px-4 py-2 text-xs text-slate-400">Alpaca Paper · connected</span>

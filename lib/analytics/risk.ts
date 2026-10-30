@@ -1,5 +1,5 @@
 /**
- * Risk Engine v0.1 — pure, deterministic math.
+ * Risk Engine v0.2 — pure, deterministic math (including empirical 1-day VaR and ES).
  *
  * Methodology: current invested long-equity weights are applied at the START
  * of the historical window, then allowed to drift (hypothetical buy-and-hold).
@@ -28,11 +28,48 @@ export type RiskMetrics = {
   lastDate: string | null;
   path: RiskPathPoint[];
   historySufficient: boolean;
+  /** Historical simulation using 1-day modeled returns; excludes account cash. */
+  var95Pct: number | null;
+  var95Usd: number | null;
+  expectedShortfall95Pct: number | null;
+  expectedShortfall95Usd: number | null;
+  tailObservations: number;
+  tailRiskSufficient: boolean;
 };
 
 const MIN_RETURN_OBSERVATIONS = 30;
-const MAX_CLOSE_POINTS = 151;
+const MAX_CLOSE_POINTS = 301;
 const TRADING_DAYS = 252;
+export const TAIL_RISK_MIN_RETURNS = 200;
+export const TAIL_FRACTION_95 = 0.05;
+
+export type TailRisk95 = {
+  /** Loss magnitudes, never negative; 1-day percentages, NOT confidence guarantees. */
+  var95Pct: number;
+  expectedShortfall95Pct: number;
+  tailObservations: number;
+};
+
+/**
+ * Nonparametric historical simulation: descending losses = -daily returns.
+ * Empirical VaR95 is the k-th worst loss; ES95 averages the worst k losses,
+ * where k = ceil(5% × n). Require >=200 daily returns (>=10 tail outcomes).
+ * These are in-sample summaries, not validated exceedance probabilities.
+ */
+export function calculateHistoricalTailRisk95(dailyReturns: number[]): TailRisk95 | null {
+  if (dailyReturns.length < TAIL_RISK_MIN_RETURNS) return null;
+  if (dailyReturns.some(r => !Number.isFinite(r) || r <= -1)) {
+    throw new Error("Daily returns must be finite and greater than -100%.");
+  }
+  const loss = dailyReturns.map(r => -r).sort((a,b) => b-a);
+  const k = Math.ceil(dailyReturns.length * TAIL_FRACTION_95);
+  const worst = loss.slice(0,k);
+  return {
+    var95Pct: 100 * Math.max(0,worst[k-1]),
+    expectedShortfall95Pct: 100 * Math.max(0,worst.reduce((sum,v)=>sum+v,0)/k),
+    tailObservations: k,
+  };
+}
 
 function stdevSample(values: number[]): number {
   if (values.length < 2) return 0;
@@ -72,6 +109,9 @@ export function calculateRisk(
     annualizedVolatilityPct: null, maxDrawdownPct: null,
     dailyReturnObservations: 0, firstDate: null, lastDate: null,
     path: [], historySufficient: false,
+    var95Pct: null, var95Usd: null,
+    expectedShortfall95Pct: null, expectedShortfall95Usd: null,
+    tailObservations: 0, tailRiskSufficient: false,
   });
 
   const maps = allocations.map((h) => {
@@ -109,6 +149,7 @@ export function calculateRisk(
     return { ...noHistory(), firstDate: first, lastDate: dates[dates.length - 1],
       dailyReturnObservations: returns.length };
   }
+  const tail = calculateHistoricalTailRisk95(returns);
   return {
     allocations, investedValue,
     topPositionPct: allocations[0].weightPct,
@@ -118,5 +159,11 @@ export function calculateRisk(
     maxDrawdownPct: worst, dailyReturnObservations: returns.length,
     firstDate: first, lastDate: dates[dates.length - 1],
     path, historySufficient: true,
+    var95Pct: tail?.var95Pct ?? null,
+    var95Usd: tail ? investedValue * tail.var95Pct / 100 : null,
+    expectedShortfall95Pct: tail?.expectedShortfall95Pct ?? null,
+    expectedShortfall95Usd: tail ? investedValue * tail.expectedShortfall95Pct / 100 : null,
+    tailObservations: tail?.tailObservations ?? 0,
+    tailRiskSufficient: tail !== null,
   };
 }
