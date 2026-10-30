@@ -2,6 +2,7 @@ import "server-only";
 import { loadDailyStockCloses } from "../alpaca/market-data";
 import { calculateRisk } from "../analytics/risk";
 import { MAX_RESEARCH_WATCHLIST, symbolPattern } from "./types";
+import { parseResearchAssetDirectory } from "./asset-parser";
 export { rankResearchMatches } from "./search-ranking";
 import type { ResearchAsset, ResearchArticle, StockReport } from "./types";
 
@@ -27,14 +28,6 @@ async function getAlpaca(url:string):Promise<unknown>{
   if(!response.ok) throw new Error("Alpaca market data is temporarily unavailable.");
   return response.json() as Promise<unknown>;
 }
-function parseAsset(raw: unknown):ResearchAsset | null {
-  if(!isRecord(raw))return null;
-  const symbol=str(raw.symbol).toUpperCase();
-  if(!symbolPattern.test(symbol) || str(raw.asset_class)!=="us_equity" ||
-     str(raw.status)!=="active")return null;
-  return {symbol,name:str(raw.name)||symbol,exchange:str(raw.exchange)||"US",
-    tradable:raw.tradable===true};
-}
 let assetCache:{until:number; data:ResearchAsset[]}|null=null;
 let pending:Promise<ResearchAsset[]>|null=null;
 /** Alpaca /v2/assets has no company-name query; filter the verified asset catalog here. */
@@ -44,8 +37,7 @@ export async function loadActiveResearchAssets():Promise<ResearchAsset[]>{
   if(pending)return pending;
   pending=(async()=>{
     const raw=await getAlpaca(PAPER+"/v2/assets?status=active&asset_class=us_equity");
-    if(!Array.isArray(raw)) throw new Error("Unexpected asset-directory response.");
-    const result=raw.map(parseAsset).filter((a):a is ResearchAsset=>a!==null);
+    const result=parseResearchAssetDirectory(raw);
     if(!result.length) throw new Error("No research assets were returned.");
     assetCache={until:Date.now()+ASSET_CACHE_MS,data:result};
     return result;
