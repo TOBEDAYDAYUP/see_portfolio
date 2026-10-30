@@ -27,6 +27,14 @@ npm run build
 
 GitHub Actions runs these checks automatically on pull requests and pushes.
 
+### Research chart mouse-wheel and trackpad interactions
+
+- Scroll **up/down with the mouse wheel over the chart** to zoom in/out around the pointer's data position; on supported macOS browsers, **trackpad pinch** fires wheel gestures and uses the same smooth zoom path.
+- Fractional chart viewport coordinates preserve small trackpad movements without rounding each step away. Zoom cannot fabricate additional market bars or increase time resolution beyond the selected 1D/5D/1M/1Y/All API granularity.
+- With the chart zoomed, two-finger **horizontal trackpad swipe** pans left/right; the original Shift+drag pan, drag-to-select zoom, arrow buttons, Reset zoom and Escape remain available.
+- Wheel/pinch events are handled with a non-passive listener only over the chart. Scrolling and page zoom outside the chart retain normal browser behavior. Sparse history (five bars or fewer) does not intercept page scrolling.
+- Chart type selection moved to the **right** and offers exactly three types: Candlesticks, Line chart and OHLC bars. Volume On/Off stays to the left, independent of the chart type. No chart library or additional Alpaca keys needed.
+
 ### Historical chart data quality update
 
 - Research charts now request **delayed SIP consolidated historical bars first**, with the last 20 minutes excluded for intraday queries. Alpaca's documented Basic Trading API access generally permits historical SIP data older than 15 minutes without the paid real-time SIP plan.
