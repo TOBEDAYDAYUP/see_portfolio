@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { ResearchAsset, ResearchResponse, StockReport } from "../../../lib/research/types";
 import ResearchNewsFeed from "./news-feed";
 import AdvancedStockChart from "./advanced-stock-chart";
+import FundamentalAnalysis from "./fundamental-analysis";
 const money=(v:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2}).format(v);
 const pct=(v:number)=> (v>0?"+":"")+v.toFixed(2)+"%";
 const riskPct=(v:number|null)=>v===null?"—":v.toFixed(2)+"%";
@@ -82,10 +83,11 @@ export default function StockReportView({symbol,asset:knownAsset,isFollowed,onFo
           not forward-looking probability guarantees. No position value or portfolio P/L is assumed.
         </p>
       </section>
+      <FundamentalAnalysis key={report.asset.symbol} symbol={report.asset.symbol}/>
       <section className="grid gap-4 md:grid-cols-2">
         <div className="surface-panel rounded-2xl p-5"><h3 className="font-semibold">12M Growth / Valuation</h3>
           <p className="mt-3 text-2xl font-semibold">—</p>
-          <p className="mt-2 text-xs leading-6 text-slate-400">A validated valuation model and company financial statements are not yet connected. No invented price target.</p>
+          <p className="mt-2 text-xs leading-6 text-slate-400">SEC annual financials are shown above when available. A validated valuation and forecast model is still not built; no invented price target.</p>
         </div>
         <div className="surface-panel rounded-2xl p-5"><h3 className="font-semibold">Expected Dividends</h3>
           <p className="mt-3 text-2xl font-semibold">—</p>
