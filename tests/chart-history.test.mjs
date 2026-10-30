@@ -22,10 +22,13 @@ test("intraday 1D/1M excludes 20 minutes while annual daily bars exclude today",
   const intraday=planStockChart("1D",now);
   assert.equal(intraday.end,"2026-10-30T19:40:00.000Z");
   assert.equal(intraday.intraday,true);
-  const daily=planStockChart("1M",now);
-  assert.equal(daily.end,"2026-10-29");
-  assert.equal(daily.intraday,true);
-  assert.equal(daily.end,"2026-10-30T19:40:00.000Z");
+  const hourly=planStockChart("1M",now);
+  assert.equal(hourly.interval,"1Hour");
+  assert.equal(hourly.intraday,true);
+  assert.equal(hourly.end,"2026-10-30T19:40:00.000Z");
+  const annual=planStockChart("1Y",now);
+  assert.equal(annual.end,"2026-10-29");
+  assert.equal(annual.intraday,false);
 });
 test("timezone grouping handles premarket and DST boundaries",()=>{
   assert.equal(marketDateNY("2026-10-30T13:30:00Z"),"2026-10-30");
