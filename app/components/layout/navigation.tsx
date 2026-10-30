@@ -1,7 +1,7 @@
 "use client";
 
-import { portfolioLinks } from "../../lib/navigation";
-import type { Page, Translator } from "../../types/app";
+import { portfolioLinks } from "../../../lib/navigation";
+import type { Page, Translator } from "../../../types/app";
 
 type Go = (next: Page) => void;
 
