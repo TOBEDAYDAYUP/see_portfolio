@@ -5,6 +5,7 @@ import PortfolioDashboard, { type PortfolioSection } from "./components/portfoli
 
 type Page = PortfolioSection | "brief" | "settings";
 type Currency = "USD" | "CNY";
+type Theme = "dark" | "light";
 type Language = "en" | "zh";
 type Delivery = "all" | "major" | "digest";
 type Tone = "Positive" | "Mixed" | "Negative";
@@ -49,6 +50,7 @@ export default function Home() {
   const [delivery,setDelivery] = useState<Delivery>("major");
   const [language,setLanguage] = useState<Language>("en");
   const [currency,setCurrency] = useState<Currency>("USD");
+  const [theme,setTheme] = useState<Theme>("dark");
   const t = (english:string,chinese:string) => language === "zh" ? chinese : english;
 
   useEffect(() => {
@@ -69,6 +71,7 @@ export default function Home() {
       if(get("see-notifications-v1")==="true") setNotifications(true);
       if(get("see-language-v1")==="zh") setLanguage("zh");
       if(get("see-currency-v1")==="CNY") setCurrency("CNY");
+      if(get("see-theme-v1")==="light") setTheme("light");
     } catch { /* Use safe defaults when storage is unavailable. */ }
     setLoaded(true);
   },[]);
@@ -82,8 +85,9 @@ export default function Home() {
       localStorage.setItem("see-notifications-v1",String(notifications));
       localStorage.setItem("see-language-v1",language);
       localStorage.setItem("see-currency-v1",currency);
+      localStorage.setItem("see-theme-v1",theme);
     } catch { /* Settings work until the page is refreshed. */ }
-  },[loaded,watchlist,minimumScore,briefTone,delivery,notifications,language,currency]);
+  },[loaded,watchlist,minimumScore,briefTone,delivery,notifications,language,currency,theme]);
 
   const related=stories.filter(s=>watchlist.includes(s.ticker)).sort((a,b)=>b.score-a.score);
   const important=related.filter(s=>s.score>=minimumScore);
@@ -94,7 +98,7 @@ export default function Home() {
   const fieldClass="glass-field w-full rounded-xl border border-white/15 bg-[#101c2e] px-3 py-3 text-sm text-slate-100 outline-none focus:border-[#88e1ce]";
   const labelClass="mb-2 block text-sm font-medium text-slate-200";
 
-  return <div className="see-shell min-h-screen bg-[#0b1424] text-slate-100" onPointerMove={e => {
+  return <div data-theme={theme} className="see-shell min-h-screen bg-[#0b1424] text-slate-100" onPointerMove={e => {
     if (e.pointerType !== "mouse" || !(e.target instanceof Element)) return;
     const panel = e.target.closest<HTMLElement>(".glass-panel, .glass-feature");
     if (!panel) return;
@@ -139,6 +143,37 @@ export default function Home() {
         {page==="settings"&&<>
           <div className="mb-8"><p className="mb-2 text-[11px] font-semibold tracking-[.17em] text-[#8fe7d1]">PREFERENCES</p><h1 className="text-3xl font-semibold sm:text-[38px]">{t("Settings","设置")}</h1><p className="mt-2 text-sm text-slate-400">{t("Choose the information you receive and how you want to view it.","设置消息强度、通知、语言和金额显示方式。")}</p></div>
           <div className="grid gap-5 2xl:grid-cols-2">
+            <section className="glass-panel rounded-2xl border border-white/10 bg-[#172338] p-5 sm:p-6 2xl:col-span-2">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold">{t("Appearance","外观主题")}</h2>
+                  <p className="mt-2 text-xs leading-5 text-slate-400">{t("Choose the look that suits your workspace. Changes apply immediately and are saved in this browser.","选择适合你的界面风格。切换立即生效，并自动保存在当前浏览器中。")}</p>
+                </div>
+                <span className="glass-pill rounded-full px-3 py-1.5 text-[11px] font-semibold">{theme==="light"?t("Light Glass","浅色玻璃"):t("Dark Glass","深色玻璃")}</span>
+              </div>
+              <div role="group" aria-label={t("Color theme","颜色主题")} className="mt-6 grid gap-3 sm:grid-cols-2">
+                <button type="button" onClick={()=>setTheme("light")} aria-pressed={theme==="light"} className={"theme-choice rounded-2xl p-3 text-left transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 "+(theme==="light"?"theme-choice-active":"")}>
+                  <div className="theme-miniature theme-miniature-light" aria-hidden="true">
+                    <div className="miniature-topbar"><span className="miniature-dot"/> SEE</div>
+                    <div className="miniature-layout"><div className="miniature-sidebar"><span/><span/><span/></div><div className="miniature-content"><div className="miniature-chart"><span/><span/><span/><span/><span/></div><div className="miniature-cards"><span/><span/><span/></div></div></div>
+                  </div>
+                  <span className="mt-3 flex items-center justify-between gap-3">
+                    <span><span className="block text-sm font-semibold">{t("☀ Light Glass","☀ 浅色玻璃")}</span><span className="mt-1 block text-xs text-slate-400">{t("Bright, airy, clear","明亮、通透、清晰")}</span></span>
+                    <span className="theme-choice-indicator" aria-hidden="true">{theme==="light"?"✓":""}</span>
+                  </span>
+                </button>
+                <button type="button" onClick={()=>setTheme("dark")} aria-pressed={theme==="dark"} className={"theme-choice rounded-2xl p-3 text-left transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 "+(theme==="dark"?"theme-choice-active":"")}>
+                  <div className="theme-miniature theme-miniature-dark" aria-hidden="true">
+                    <div className="miniature-topbar"><span className="miniature-dot"/> SEE</div>
+                    <div className="miniature-layout"><div className="miniature-sidebar"><span/><span/><span/></div><div className="miniature-content"><div className="miniature-chart"><span/><span/><span/><span/><span/></div><div className="miniature-cards"><span/><span/><span/></div></div></div>
+                  </div>
+                  <span className="mt-3 flex items-center justify-between gap-3">
+                    <span><span className="block text-sm font-semibold">{t("☾ Dark Glass","☾ 深色玻璃")}</span><span className="mt-1 block text-xs text-slate-400">{t("Focused, calm, immersive","专注、沉稳、沉浸")}</span></span>
+                    <span className="theme-choice-indicator" aria-hidden="true">{theme==="dark"?"✓":""}</span>
+                  </span>
+                </button>
+              </div>
+            </section>
             <section className="rounded-2xl border border-white/10 bg-[#172338] glass-panel p-5 sm:p-6"><div className="mb-6"><h2 className="text-lg font-semibold">{t("Notifications","通知设置")}</h2><p className="mt-2 text-xs leading-5 text-slate-400">{t("Preferences are saved locally. No notifications are delivered in this prototype.","偏好保存在本机浏览器中。目前不会实际发送通知。")}</p></div>
               <div className="mb-6 flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-[#102035] p-4"><div><div className="text-sm font-medium">{t("Enable notifications","启用消息通知")}</div><p className="mt-1 text-xs text-slate-400">{t("Allow alert delivery when supported","待推送服务接入后允许接收提醒")}</p></div><button role="switch" type="button" aria-checked={notifications} aria-label={t("Enable notifications","启用消息通知")} onClick={()=>setNotifications(v=>!v)} className={"relative h-7 w-12 shrink-0 rounded-full transition-colors "+(notifications?"bg-[#65d5b9]":"bg-[#46566b]")}><span className={"absolute top-1 h-5 w-5 rounded-full bg-white transition-all "+(notifications?"left-6":"left-1")}/></button></div>
               <label htmlFor="notification-intensity" className={labelClass}>{t("Importance threshold / intensity","重要性阈值 / 推送强度")}: <span className="text-[#a1ebdc]">{minimumScore}/100</span></label>
