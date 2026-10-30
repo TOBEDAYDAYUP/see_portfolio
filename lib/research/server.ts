@@ -2,6 +2,7 @@ import "server-only";
 import { loadDailyStockCloses } from "../alpaca/market-data";
 import { calculateRisk } from "../analytics/risk";
 import { MAX_RESEARCH_WATCHLIST, symbolPattern } from "./types";
+export { rankResearchMatches } from "./search-ranking";
 import type { ResearchAsset, ResearchArticle, StockReport } from "./types";
 
 const PAPER = "https://paper-api.alpaca.markets";
@@ -50,18 +51,6 @@ export async function loadActiveResearchAssets():Promise<ResearchAsset[]>{
     return result;
   })();
   try{return await pending;}finally{pending=null;}
-}
-export function rankResearchMatches(assets:ResearchAsset[], query:string, limit=20):ResearchAsset[]{
-  const q=query.trim().toUpperCase();
-  if(q.length<1||q.length>60)return [];
-  return assets.map(asset=>{
-    const symbol=asset.symbol.toUpperCase(), name=asset.name.toUpperCase();
-    const rank=symbol===q?0:symbol.startsWith(q)?1:name.startsWith(q)?2:
-      name.includes(q)?3:symbol.includes(q)?4:99;
-    return {asset,rank};
-  }).filter(x=>x.rank<99).sort((a,b)=>a.rank-b.rank ||
-    a.asset.symbol.localeCompare(b.asset.symbol))
-    .slice(0,limit).map(x=>x.asset);
 }
 export function validateResearchSymbol(value:string):string|null {
   const symbol=value.toUpperCase().trim();
