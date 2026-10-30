@@ -13,6 +13,14 @@ export type AlpacaPosition = {
   changeTodayPct: number | null;
 };
 export type PortfolioHistoryPoint = { timestamp: number; equity: number };
+/** Alpaca-reported P/L for up to the past year. Coverage may be shorter for newer accounts. */
+export type AnnualPaperPerformance = {
+  available: boolean;
+  daysCovered: number | null;
+  completeYear: boolean;
+  profitLoss: number | null;
+  profitLossPct: number | null;
+};
 export type PaperAccountSummary = {
   status: string;
   equity: number | null;
@@ -22,5 +30,5 @@ export type PaperAccountSummary = {
 };
 export type AlpacaPortfolioResult =
   | { status: "not_configured" }
-  | { status: "connected"; source: "alpaca-paper"; fetchedAt: string; account: PaperAccountSummary; positions: AlpacaPosition[]; history: PortfolioHistoryPoint[]; historyAvailable: boolean }
+  | { status: "connected"; source: "alpaca-paper"; fetchedAt: string; account: PaperAccountSummary; positions: AlpacaPosition[]; history: PortfolioHistoryPoint[]; historyAvailable: boolean; annualPerformance: AnnualPaperPerformance }
   | { status: "error"; code: "auth_failed" | "rate_limited" | "unavailable" | "disabled"; message: string };
