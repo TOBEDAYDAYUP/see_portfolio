@@ -23,7 +23,7 @@ export function SiteHeader({go}:{go:Go}) {
 export function Sidebar({page,go,t}:{page:Page;go:Go;t:Translator}) {
   const sidebarClass=(active:boolean)=>"glass-nav-item flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition-colors "+(active?"bg-[#233b50] font-semibold text-[#9af0dc]":"text-slate-400 hover:bg-white/5 hover:text-white");
   return <>
-      <aside className="glass-sidebar hidden w-[238px] shrink-0 flex-col border-r border-white/10 bg-[#101b2d] px-4 py-7 md:flex">
+      <aside className="glass-sidebar hidden w-[238px] shrink-0 flex-col border-r border-white/10 bg-[#101b2d] px-4 py-7 md:sticky md:top-[72px] md:flex md:h-[calc(100dvh-72px)] md:self-start md:overflow-y-auto md:overscroll-contain">
         <div className="mb-5 border-b border-white/10 px-4 pb-5 text-sm font-semibold tracking-wide text-slate-100">{t("Portfolio","投资组合")}</div>
         <nav aria-label="Portfolio navigation" className="space-y-1">
           {portfolioLinks.map(link=><button key={link.id} onClick={()=>go(link.id)} className={sidebarClass(page===link.id)} aria-current={page===link.id?"page":undefined}><span className="w-5 text-lg">{link.symbol}</span>{t(link.label,link.zh)}</button>)}
