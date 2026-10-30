@@ -202,6 +202,7 @@ body {
   color: #af2e4e;
 }
 .see-shell[data-theme="light"] .text-amber-300,
+.see-shell[data-theme="light"] .text-amber-200,
 .see-shell[data-theme="light"] .text-amber-100 {
   color: #8a5b14;
 }
