@@ -38,7 +38,7 @@ export default function Home() {
         {workspace==="portfolio"&&portfolioLinks.some(link=>link.id===page)&&<PortfolioDashboard section={page as PortfolioSection} currency={currency} onSettings={()=>go("settings")}/>}
         {workspace==="portfolio"&&page==="brief"&&<DailyBrief prefs={prefs} go={go} briefItems={briefItems} relatedCount={related.length}/>}
         {workspace==="portfolio"&&page==="settings"&&<SettingsPanel prefs={prefs} go={go} notificationCount={notificationCount}/>}
-        {workspace==="research"&&<ResearchWorkspace section={researchPage} t={t}/>}
+        {workspace==="research"&&<ResearchWorkspace section={researchPage} t={t} navigate={goResearch}/>}
         <footer className="mt-12 border-t border-white/10 pt-6 text-xs leading-6 text-slate-500">SEE Portfolio · {t("Paper trading is simulated. Other research modules remain prototypes; not investment advice.","模拟盘交易不涉及真实资金。其他研究模块仍为原型；不构成投资建议。")}</footer>
       </main>
     </div>

@@ -27,6 +27,20 @@ npm run build
 
 GitHub Actions runs these checks automatically on pull requests and pushes.
 
+## Research beta — real company lookup, watchlist, reports and news
+
+Research is **separate from Portfolio**. It does not change Alpaca holdings, portfolio P/L, VaR/ES, or projected dividends.
+
+- **Stock Search:** type a ticker or company name. The local server queries Alpaca Paper's active US-equity asset directory (15-minute in-process cache) and ranks exact ticker / ticker prefix / company-name matches. Only verified records can be added.
+- **My Watchlist:** follow up to 30 US equity/ETF assets, remove tickers and open their reports. The list lives in browser \`localStorage\` under \`see-research-watchlist-v1\`, separate from the existing demo/brief watchlist key. No server-side user accounts yet; browser/device-specific.
+- **Stock Reports:** last available split-adjusted daily **IEX** closes (not a live consolidated price); chart and price change; individual-stock historical volatility, max drawdown and 1-day historical VaR95 / ES95 computed from the existing pure TypeScript Risk Engine. Require 30 observations for volatility/drawdown and 200 for VaR/ES. A $100 notional used internally for return math is **not** an actual holding, and no dollar P/L is generated.
+- **News & Updates:** recent Alpaca-supplied headlines, summaries, publication information and source links for followed stocks; articles also appear in the individual report. Not AI-generated and no notifications are sent.
+- **Not yet built:** validated 12-month expected return, forward dividend forecasts, fundamental valuation and AI-generated summaries. These sections show explicit unavailable states, not fabricated amounts.
+
+Read-only research routes: \`GET /api/research/search?q=\`, \`GET /api/research/report?symbol=\`, \`GET /api/research/news?symbols=\`. They are **disabled in production**, as are the personal Alpaca Portfolio endpoints, until user authentication and authorization are implemented. All API secrets remain on the server. All research endpoints use \`Cache-Control: private, no-store\`; ticker inputs and saved data are validated.
+
+The existing Alpaca Paper environment variables in \`.env.local\` are sufficient. No additional npm packages, data-provider keys or Python environment required. Network/API rate limits and data-plan entitlements still apply.
+
 ## Portfolio / Research workspaces
 
 - The global header has two **plain-text, unboxed** workspace choices immediately to the right of the SEE Portfolio brand: **Portfolio** and **Research**.

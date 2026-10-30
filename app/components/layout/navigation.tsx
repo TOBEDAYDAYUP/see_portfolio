@@ -38,7 +38,7 @@ export function SiteHeader({go,workspace,onWorkspaceChange}:{
         </nav>
       </div>
       <span className="surface-pill hidden shrink-0 rounded-full px-3 py-1.5 text-[11px] font-semibold tracking-wide lg:inline-flex">
-        {workspace==="portfolio"?"PAPER + DEMO":"RESEARCH · PREVIEW"}
+        {workspace==="portfolio"?"PAPER + DEMO":"RESEARCH · LOCAL BETA"}
       </span>
     </div>
   </header>;
@@ -71,7 +71,7 @@ export function ResearchSidebar({page,go,t}:{page:ResearchSection;go:ResearchGo;
       </button>)}
     </nav>
     <div className="mt-auto border-t border-white/10 pt-5 px-4 text-xs leading-5 text-slate-400">
-      {t("Research tools are being developed independently of your paper holdings.","研究工具独立于模拟盘持仓开发。")}
+      {t("Research watchlist and reports do not affect your paper positions.","研究关注列表与报告不会影响模拟盘持仓。")}
     </div>
   </aside>;
 }
