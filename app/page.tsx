@@ -53,6 +53,9 @@ export default function Home() {
   const [search,setSearch] = useState("");
   const [selected,setSelected] = useState("NVDA");
   const [alertMode,setAlertMode] = useState("Major updates");
+  const [minimumScore,setMinimumScore] = useState(70);
+  const [briefTone,setBriefTone] = useState("All");
+  const [briefTicker,setBriefTicker] = useState("All");
   useEffect(() => {
     try {
       const raw = localStorage.getItem("see-watchlist-v1");
@@ -61,11 +64,33 @@ export default function Home() {
         if (Array.isArray(data)) setWatchlist(data.filter((s): s is string => typeof s === "string" && catalogue.some((c) => c.ticker === s)));
       }
     } catch { /* Start with sample data if browser storage fails. */ }
+    try {
+      const mode = localStorage.getItem("see-alert-mode-v1");
+      if (mode && ["All updates", "Major updates", "Daily digest only"].includes(mode)) setAlertMode(mode);
+      const rawScore = localStorage.getItem("see-minimum-score-v1");
+      if (rawScore !== null) {
+        const score = Number(rawScore);
+        if (Number.isFinite(score) && score >= 40 && score <= 95) setMinimumScore(score);
+      }
+      const tone = localStorage.getItem("see-brief-tone-v1");
+      if (tone && ["All", "Positive", "Mixed", "Negative"].includes(tone)) setBriefTone(tone);
+    } catch { /* Preferences fall back to defaults. */ }
     setLoaded(true);
   }, []);
-  useEffect(() => { if (loaded) { try { localStorage.setItem("see-watchlist-v1", JSON.stringify(watchlist)); } catch {} } }, [watchlist,loaded]);
+  useEffect(() => {
+    if (!loaded) return;
+    try {
+      localStorage.setItem("see-watchlist-v1", JSON.stringify(watchlist));
+      localStorage.setItem("see-alert-mode-v1", alertMode);
+      localStorage.setItem("see-minimum-score-v1", String(minimumScore));
+      localStorage.setItem("see-brief-tone-v1", briefTone);
+    } catch { /* Demo remains available without browser storage. */ }
+  }, [watchlist,alertMode,minimumScore,briefTone,loaded]);
   const followed = catalogue.filter(s => watchlist.includes(s.ticker));
   const related = stories.filter(s => watchlist.includes(s.ticker)).sort((a,b) => b.score - a.score);
+  const important = related.filter(s => s.score >= minimumScore);
+  const briefItems = important.filter(s => (briefTone === "All" || s.tone === briefTone) && (briefTicker === "All" || s.ticker === briefTicker));
+  const immediateCount = alertMode === "Daily digest only" ? 0 : alertMode === "Major updates" ? important.length : related.length;
   const suggestions = catalogue.filter(s => !watchlist.includes(s.ticker) && (s.ticker.toLowerCase().includes(search.toLowerCase()) || s.name.toLowerCase().includes(search.toLowerCase())));
   const add = (ticker: string) => { setWatchlist(old => [...new Set([...old,ticker])]); setSelected(ticker); setOpen(false); setSearch(""); };
   const remove = (ticker: string) => setWatchlist(old => old.filter(s => s !== ticker));
@@ -114,7 +139,7 @@ export default function Home() {
         {page === "overview" && <>
           <div className="mb-7 grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-[#172338] p-5"><div className="text-xs text-slate-400">☆ &nbsp; Following</div><div className="mt-3 text-3xl font-semibold">{watchlist.length} <span className="text-sm font-normal text-slate-400">stocks</span></div><p className="mt-3 text-xs text-slate-500">Your research universe</p></div>
-            <div className="rounded-2xl border border-white/10 bg-[#172338] p-5"><div className="text-xs text-slate-400">◉ &nbsp; High-priority samples</div><div className="mt-3 text-3xl font-semibold">{related.filter(s => s.score >= 80).length} <span className="text-sm font-normal text-slate-400">updates</span></div><p className="mt-3 text-xs text-slate-500">Illustrative importance 80+</p></div>
+            <div className="rounded-2xl border border-white/10 bg-[#172338] p-5"><div className="text-xs text-slate-400">◉ &nbsp; Important sample events</div><div className="mt-3 text-3xl font-semibold">{important.length} <span className="text-sm font-normal text-slate-400">updates</span></div><p className="mt-3 text-xs text-slate-500">Demo priority at or above {minimumScore}/100</p></div>
             <div className="rounded-2xl border border-white/10 bg-[#172338] p-5"><div className="text-xs text-slate-400">✧ &nbsp; Daily briefing</div><div className="mt-3 text-2xl font-semibold text-[#8debd6]">Preview ready</div><p className="mt-3 text-xs text-slate-500">Personalized sample summary</p></div>
           </div>
           <div className="mb-8 grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(280px,1fr)]">
@@ -125,7 +150,8 @@ export default function Home() {
             <section className="flex flex-col rounded-2xl border border-[#315857] bg-[linear-gradient(145deg,#183b43,#172338)] p-6"><div className="mb-8 flex items-center justify-between"><span className="text-sm font-semibold text-[#b1f6e6]">✧ &nbsp; Your daily brief</span><span className="rounded-full border border-white/10 px-2.5 py-1 text-xs">Demo</span></div><h2 className="text-2xl font-semibold leading-snug">Less scrolling.<br/>More understanding.</h2><p className="mt-4 text-sm leading-7 text-slate-300">A curated research summary for the companies you follow — not just a wall of headlines.</p><button onClick={() => setPage("brief")} className="mt-auto pt-9 text-left text-sm font-semibold text-[#b5f5e6]">Open today&apos;s brief ↗</button></section>
           </div>
           <div className="mb-4 flex items-end justify-between"><div><h2 className="text-lg font-semibold">Worth your attention</h2><p className="mt-1 text-xs text-slate-500">Hypothetical events prioritized for your watchlist</p></div><button onClick={() => setPage("brief")} className="text-xs font-semibold text-[#8be7d2]">See all →</button></div>
-          <div className="grid gap-4 lg:grid-cols-3">{related.slice(0,3).map(s => <StoryCard key={s.ticker} story={s}/>)}</div>
+          <div className="grid gap-4 lg:grid-cols-3">{important.slice(0,3).map(s => <StoryCard key={s.ticker} story={s}/>)}</div>
+          {important.length === 0 && <div className="rounded-2xl border border-white/10 bg-[#172338] p-6 text-sm text-slate-400">No demo events meet your current importance threshold. Adjust it in Daily Brief.</div>}
         </>}
         {page === "watchlist" && <>
           <section className="mb-6 rounded-2xl border border-white/10 bg-[#172338] p-5 sm:p-7"><div className="mb-4"><h2 className="text-lg font-semibold">Following {watchlist.length} companies</h2><p className="mt-1 text-xs text-slate-500">Watchlist entries do not mean these stocks are owned.</p></div>
@@ -136,8 +162,41 @@ export default function Home() {
         </>}
         {page === "brief" && <>
           <section className="mb-6 rounded-2xl border border-[#315857] bg-[linear-gradient(130deg,#193f42,#172338)] p-7"><div className="text-xs font-semibold tracking-widest text-[#aaf2e2]">✧ &nbsp; PERSONALIZED BRIEF · DEMO</div><h2 className="mt-4 text-2xl font-semibold leading-snug sm:text-3xl">The important things,<br/>in one place.</h2><p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">These are fictional examples associated with your watchlist. News feeds, AI summaries and notifications will be integrated later.</p><div className="mt-5 flex gap-2 text-xs"><span className="rounded-full bg-white/10 px-3 py-1.5">{watchlist.length} stocks</span><span className="rounded-full bg-white/10 px-3 py-1.5">{related.length} sample events</span></div></section>
-          <section className="mb-6 rounded-2xl border border-white/10 bg-[#172338] p-5"><h3 className="font-semibold">Notification preferences · Prototype</h3><p className="my-2 text-xs text-slate-500">These buttons only demonstrate the interface. No alerts are sent.</p><div className="mt-4 flex flex-wrap gap-2">{["All updates","Major updates","Daily digest only"].map(mode => <button key={mode} onClick={() => setAlertMode(mode)} className={"rounded-full border px-4 py-2 text-xs " + (alertMode === mode ? "border-emerald-300 bg-emerald-300/10 text-emerald-200" : "border-white/10 text-slate-400")}>{mode}</button>)}</div></section>
-          <h2 className="mb-4 text-lg font-semibold">Your sample updates</h2><div className="grid gap-4 lg:grid-cols-2">{related.map(s => <StoryCard key={s.ticker} story={s}/>)}</div>
+          <section className="mb-6 rounded-2xl border border-white/10 bg-[#172338] p-5 sm:p-6">
+            <div className="mb-5">
+              <h3 className="font-semibold">Personalize your daily brief</h3>
+              <p className="mt-2 text-xs leading-5 text-slate-400">These filters work on sample events now. Your choices are saved in this browser.</p>
+            </div>
+            <div className="mb-6 flex flex-col gap-2">
+              <label htmlFor="see-minscore" className="flex items-center justify-between gap-3 text-sm text-slate-200">
+                <span>Minimum importance</span><strong className="text-[#9ff0dc]">{minimumScore}/100</strong>
+              </label>
+              <input id="see-minscore" type="range" min={40} max={95} step={5} value={minimumScore} onChange={e => setMinimumScore(Number(e.target.value))} className="w-full cursor-pointer accent-[#83e3cd]" />
+              <div className="flex justify-between text-[11px] text-slate-500"><span>More events</span><span>Only major events</span></div>
+            </div>
+            <div className="mb-6 grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-2 text-xs text-slate-400">Sentiment
+                <select value={briefTone} onChange={e => setBriefTone(e.target.value)} className="rounded-xl border border-white/15 bg-[#0f1b2d] px-3 py-3 text-sm text-white focus-visible:outline-2 focus-visible:outline-[#83e3cd]">
+                  {["All","Positive","Mixed","Negative"].map(tone => <option key={tone} value={tone}>{tone === "All" ? "All sentiments" : tone}</option>)}
+                </select>
+              </label>
+              <label className="flex flex-col gap-2 text-xs text-slate-400">Company
+                <select value={briefTicker} onChange={e => setBriefTicker(e.target.value)} className="rounded-xl border border-white/15 bg-[#0f1b2d] px-3 py-3 text-sm text-white focus-visible:outline-2 focus-visible:outline-[#83e3cd]">
+                  <option value="All">All followed stocks</option>
+                  {watchlist.filter(ticker => catalogue.some(s => s.ticker === ticker)).map(ticker => <option key={ticker} value={ticker}>{ticker}</option>)}
+                </select>
+              </label>
+            </div>
+            <div className="border-t border-white/10 pt-5">
+              <h3 className="font-semibold">Notification preview</h3>
+              <p className="mt-2 text-xs text-slate-500">Choose which events would qualify for notifications. This is not connected to email or push services.</p>
+              <div className="mt-4 flex flex-wrap gap-2">{["All updates","Major updates","Daily digest only"].map(mode => <button key={mode} onClick={() => setAlertMode(mode)} aria-pressed={alertMode === mode} className={"rounded-full border px-4 py-2 text-xs transition-colors " + (alertMode === mode ? "border-emerald-300 bg-emerald-300/10 text-emerald-200" : "border-white/10 text-slate-400 hover:border-white/30")}>{mode}</button>)}</div>
+              <p aria-live="polite" className="mt-4 text-xs leading-6 text-[#abeadd]">{alertMode === "Daily digest only" ? "No instant notifications. All relevant sample events remain available in your digest." : immediateCount + " sample events would qualify for instant notifications under this setting."}</p>
+            </div>
+          </section>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2"><h2 className="text-lg font-semibold">Filtered sample updates</h2><span aria-live="polite" className="text-xs text-slate-400">Showing {briefItems.length} of {related.length} followed-company events</span></div>
+          <div className="grid gap-4 lg:grid-cols-2">{briefItems.map(s => <StoryCard key={s.ticker} story={s}/>)}</div>
+          {briefItems.length === 0 && <div className="rounded-2xl border border-white/10 bg-[#172338] p-6 text-sm leading-6 text-slate-400">No sample events match these filters. Lower the importance threshold or select “All sentiments” and “All followed stocks”.</div>}
         </>}
         <footer className="mt-12 border-t border-white/10 pt-6 text-xs leading-6 text-slate-500">SEE Portfolio · Prototype v0.1 · Financial figures and news are fictional placeholders, not investment advice.</footer>
       </main>
