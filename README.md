@@ -27,6 +27,18 @@ npm run build
 
 GitHub Actions runs these checks automatically on pull requests and pushes.
 
+## Research Stock Report chart v0.2 — OHLCV and interactive history
+
+In **Research → Stock Reports**, the previous fixed daily-close line is replaced with an interactive price/volume chart:
+
+- **1D:** most recent IEX session in 5-minute OHLCV bars; **5D:** last five IEX sessions in 15-minute bars.
+- **1M / 1Y:** daily OHLCV bars; **All:** weekly OHLCV bars requested since **2016-01-01** (up to available Alpaca coverage). Intraday ranges omit the latest 20 minutes; daily/weekly ranges omit the current potentially incomplete New York market date.
+- Modes: **Candles**, **Line**, **OHLC Bars**; separate **Volume On/Off** histogram.
+- Move the pointer to inspect timestamp, Open, High, Low, Close and IEX volume. Drag across the SVG to select/zoom a date interval; after zoom, **Shift+drag** or left/right arrow buttons to pan, **Reset zoom** to return. Keyboard Left/Right moves the crosshair and Escape resets zoom.
+- OHLC and **volume are actual historical Alpaca IEX exchange bars**, not simulated candles or consolidated US market volume. Bars are split-adjusted. Incomplete API pagination, invalid bars and no-data ranges never create fake data.
+- The chart uses a separate `GET /api/research/chart?symbol=AAPL&range=1M` API and the same existing local-only Alpaca Paper credentials. Company risk statistics and the original daily close in Stock Reports are **unchanged** and independently calculated from their existing history.
+- There are no new client chart dependencies or API accounts needed. Market-data permissions, exchange coverage and rate limits still apply.
+
 ## Research beta — real company lookup, watchlist, reports and news
 
 Research is **separate from Portfolio**. It does not change Alpaca holdings, portfolio P/L, VaR/ES, or projected dividends.
