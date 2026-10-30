@@ -1,0 +1,10 @@
+export type PortfolioSection = "holdings"|"analysis"|"valuations"|"dividends"|"returns"|"updates";
+export type Page = PortfolioSection | "brief" | "settings";
+export type Currency = "USD" | "CNY";
+export type Theme = "dark" | "light";
+export type Language = "en" | "zh";
+export type Delivery = "all" | "major" | "digest";
+export type Tone = "Positive" | "Mixed" | "Negative";
+export type Company = { ticker: string; name: string };
+export type Story = { ticker: string; category: string; title: string; detail: string; score: number; tone: Tone };
+export type Translator = (english: string, chinese: string) => string;
