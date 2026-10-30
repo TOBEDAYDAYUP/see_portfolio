@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import PortfolioDashboard, { type PortfolioSection } from "./components/portfolio-dashboard";
 
-type Page = "overview" | "watchlist" | "brief";
+type Page = "overview" | "watchlist" | "brief" | PortfolioSection;
 type Stock = { ticker: string; name: string; sector: string; price: number; change: number; line: string };
 type Story = { ticker: string; type: string; title: string; detail: string; score: number; tone: "Positive" | "Mixed" | "Negative" };
 
@@ -46,7 +47,7 @@ function StoryCard({ story }: { story: Story }) {
 }
 
 export default function Home() {
-  const [page,setPage] = useState<Page>("overview");
+  const [page,setPage] = useState<Page>("holdings");
   const [watchlist,setWatchlist] = useState<string[]>(["NVDA","AAPL","MSFT","GOOGL","TSLA"]);
   const [loaded,setLoaded] = useState(false);
   const [open,setOpen] = useState(false);
@@ -95,6 +96,14 @@ export default function Home() {
   const add = (ticker: string) => { setWatchlist(old => [...new Set([...old,ticker])]); setSelected(ticker); setOpen(false); setSearch(""); };
   const remove = (ticker: string) => setWatchlist(old => old.filter(s => s !== ticker));
   const tabs: {id:Page;label:string;symbol:string}[] = [{id:"overview",label:"Overview",symbol:"▦"},{id:"watchlist",label:"My Watchlist",symbol:"☆"},{id:"brief",label:"Daily Brief",symbol:"▤"}];
+  const portfolioTabs: {id:PortfolioSection;label:string;symbol:string}[] = [
+    {id:"holdings",label:"Holdings",symbol:"▥"},
+    {id:"analysis",label:"Analysis",symbol:"◈"},
+    {id:"valuations",label:"Valuations",symbol:"◇"},
+    {id:"dividends",label:"Dividends",symbol:"↗"},
+    {id:"returns",label:"Returns",symbol:"⌁"},
+    {id:"updates",label:"Updates",symbol:"◉"},
+  ];
   const title = page === "overview" ? "Your market, clearly." : page === "watchlist" ? "Your watchlist." : "Your daily brief.";
 
   return <div className="min-h-screen bg-[#0b1424] text-slate-100">
@@ -128,14 +137,19 @@ export default function Home() {
         <div className="mb-8 border-b border-white/10 pb-5 text-sm font-medium text-slate-300">Research workspace</div>
         <div className="mb-4 px-3 text-[10px] font-semibold tracking-[.2em] text-slate-500">WORKSPACE</div>
         <nav className="space-y-1">{tabs.map(t => <button key={t.id} onClick={() => setPage(t.id)} className={"flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition " + (page === t.id ? "bg-[#233b50] font-semibold text-[#9af0dc]" : "text-slate-400 hover:bg-white/5 hover:text-white")}><span className="w-5 text-lg">{t.symbol}</span>{t.label}</button>)}</nav>
+        <div className="mb-3 mt-7 px-3 text-[10px] font-semibold tracking-[.2em] text-slate-500">PORTFOLIO</div>
+        <nav className="space-y-1" aria-label="Portfolio sections">{portfolioTabs.map(t => <button key={t.id} onClick={() => setPage(t.id)} className={"flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm transition " + (page === t.id ? "bg-[#233b50] font-semibold text-[#9af0dc]" : "text-slate-400 hover:bg-white/5 hover:text-white")}><span className="w-5 text-lg">{t.symbol}</span>{t.label}</button>)}</nav>
         <div className="mt-auto rounded-2xl border border-emerald-300/10 bg-[#18333d] p-4"><div className="mb-2 text-sm font-semibold text-[#a4f1df]">◇ &nbsp; Private preview</div><p className="text-xs leading-5 text-slate-400">Your list is stored in this browser. No brokerage connection is needed.</p></div>
         <p className="mt-5 px-1 text-[11px] text-slate-600">SEE Portfolio · Prototype v0.1</p>
       </aside>
       <main className="min-w-0 flex-1 px-5 pb-16 pt-7 sm:px-9 lg:px-12">
         <div className="mb-6 flex items-center gap-2 text-xs text-slate-400"><span className="text-emerald-300">●</span> Personal research workspace</div>
-        <nav className="mb-5 flex gap-2 overflow-x-auto md:hidden">{tabs.map(t => <button key={t.id} onClick={() => setPage(t.id)} className={"shrink-0 rounded-full px-4 py-2 text-xs " + (page === t.id ? "bg-[#7be2ca] font-bold text-[#102139]" : "border border-white/10 text-slate-300")}>{t.label}</button>)}</nav>
+        <nav className="mb-5 flex gap-2 overflow-x-auto md:hidden">{[...tabs,...portfolioTabs].map(t => <button key={t.id} onClick={() => setPage(t.id)} className={"shrink-0 rounded-full px-4 py-2 text-xs " + (page === t.id ? "bg-[#7be2ca] font-bold text-[#102139]" : "border border-white/10 text-slate-300")}>{t.label}</button>)}</nav>
         <div className="mb-7 rounded-xl border border-slate-500/30 bg-[#1c2a40] px-4 py-3 text-xs leading-5 text-slate-300"><strong className="text-[#a4f1df]">Prototype preview.</strong> All prices, charts, percentage changes and news are fictional placeholders. No live market data or AI system is connected yet.</div>
+        {(page === "overview" || page === "watchlist" || page === "brief") && (
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><div className="mb-2 text-[11px] font-bold tracking-[.2em] text-[#85e6cf]">{page === "overview" ? "YOUR PERSONAL OVERVIEW" : page === "watchlist" ? "YOUR STOCKS" : "CURATED FOR YOU"}</div><h1 className="text-3xl font-semibold tracking-tight sm:text-[38px]">{title}</h1><p className="mt-2 text-sm text-slate-400">{page === "overview" ? "The signals that matter. None of the noise." : page === "watchlist" ? "Follow companies you care about, whether you own them or not." : "A focused digest, tailored to the stocks you follow."}</p></div><button onClick={() => {setPage("watchlist");setOpen(true);}} className="rounded-xl bg-[#83e3cd] px-4 py-3 text-sm font-bold text-[#112039] transition hover:bg-[#b5f4e5]">＋ Add stock</button></div>
+        )}
+        {portfolioTabs.some(t => t.id === page) && <PortfolioDashboard section={page as PortfolioSection}/>}
         {page === "overview" && <>
           <div className="mb-7 grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-[#172338] p-5"><div className="text-xs text-slate-400">☆ &nbsp; Following</div><div className="mt-3 text-3xl font-semibold">{watchlist.length} <span className="text-sm font-normal text-slate-400">stocks</span></div><p className="mt-3 text-xs text-slate-500">Your research universe</p></div>
