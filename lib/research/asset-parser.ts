@@ -1,5 +1,6 @@
 import type { ResearchAsset } from "./types";
-import { symbolPattern } from "./types";
+// Match Research stock symbols without importing a runtime module in node:test.
+const symbolPattern = /^[A-Z0-9][A-Z0-9.\-]{0,15}$/;
 
 type UnknownRecord = Record<string, unknown>;
 const isRecord = (value: unknown): value is UnknownRecord =>
