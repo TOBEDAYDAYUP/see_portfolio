@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { loadActiveResearchAssets, rankResearchMatches } from "../../../../lib/research/server";
-import type { ResearchAsset, ResearchResponse } from "../../../../lib/research/types";
+import type { ResearchAsset } from "../../../../lib/research/types";
 
 const headers={"Cache-Control":"private, no-store, max-age=0"};
 export async function GET(request:Request){
@@ -12,14 +12,11 @@ export async function GET(request:Request){
     return NextResponse.json({status:"error",message:"Enter 1–60 characters to search."},
       {status:400,headers});
   if(!process.env.ALPACA_PAPER_KEY_ID||!process.env.ALPACA_PAPER_SECRET_KEY)
-    return NextResponse.json({status:"not_configured",message:"Configure Alpaca Paper credentials in .env.local."}
-      satisfies ResearchResponse<ResearchAsset[]>,{headers});
+    return NextResponse.json({status:"not_configured",message:"Configure Alpaca Paper credentials in .env.local."},{headers});
   try{
     const assets=await loadActiveResearchAssets();
-    return NextResponse.json({status:"ok",data:rankResearchMatches(assets,q)}
-      satisfies ResearchResponse<ResearchAsset[]>,{headers});
+    return NextResponse.json({status:"ok",data:rankResearchMatches(assets,q)},{headers});
   }catch{
-    return NextResponse.json({status:"error",message:"Stock directory is temporarily unavailable."}
-      satisfies ResearchResponse<ResearchAsset[]>,{status:502,headers});
+    return NextResponse.json({status:"error",message:"Stock directory is temporarily unavailable."},{status:502,headers});
   }
 }
