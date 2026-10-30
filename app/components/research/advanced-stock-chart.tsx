@@ -90,7 +90,7 @@ function HistoryChart({payload,mode,showVolume}:{
   }
   const badge="rounded-lg border border-white/15 px-2.5 py-1 text-xs font-medium text-slate-300 disabled:opacity-40";
   return <div>
-    <div className="mb-3 flex flex-wrap items-start justify-between gap-3 rounded-xl bg-[#172d42]/70 px-3 py-3">
+    <div className="mb-3 flex flex-wrap items-start justify-between gap-3 rounded-xl bg-[#1c2a40] px-3 py-3">
       <div className="min-w-0">
         <p className="text-xs text-slate-400">{focused?timeLabel(focused.time,intraday):"No history"} · {payload.interval} · New York time</p>
         {focused&&<div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold tabular-nums">
