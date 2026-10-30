@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import { CHART_RANGES } from "../../../lib/research/chart-utils";
 import type { ChartPayload, ChartRange, ChartBar } from "../../../lib/research/chart-utils";
 
@@ -49,19 +50,19 @@ function HistoryChart({payload,mode,showVolume}:{
   const barWidth=Math.max(1,Math.min(12,usableW/Math.max(2,visible.length)*.65));
   const path=visible.map((bar,i)=>(i===0?"M":"L")+x(i).toFixed(2)+" "+pricePosition(bar.close,low,high).toFixed(2)).join(" ");
   const intraday=payload.interval==="5Min"||payload.interval==="15Min";
-  function canvasX(e:React.PointerEvent<SVGSVGElement>):number{
+  function canvasX(e:ReactPointerEvent<SVGSVGElement>):number{
     const bounds=e.currentTarget.getBoundingClientRect();
     return (e.clientX-bounds.left)/bounds.width*W;
   }
   const indexAt=(screenX:number)=>effectiveZoom.start+scrollToAbsolute(screenX,visible.length);
-  function onPointerDown(e:React.PointerEvent<SVGSVGElement>){
+  function onPointerDown(e:ReactPointerEvent<SVGSVGElement>){
     if(e.button!==0)return;
     const x0=within(canvasX(e),L,W-R);
     dragging.current={type:e.shiftKey&&zoom?"pan":"select",x0,zoom0:zoom};
     setDrag({x0,x1:x0});
     e.currentTarget.setPointerCapture(e.pointerId);
   }
-  function onPointerMove(e:React.PointerEvent<SVGSVGElement>){
+  function onPointerMove(e:ReactPointerEvent<SVGSVGElement>){
     const xp=within(canvasX(e),L,W-R);
     setHover(indexAt(xp));
     const state=dragging.current;
@@ -74,7 +75,7 @@ function HistoryChart({payload,mode,showVolume}:{
       setZoom({start:from,end:from+span});
     }
   }
-  function onPointerUp(e:React.PointerEvent<SVGSVGElement>){
+  function onPointerUp(e:ReactPointerEvent<SVGSVGElement>){
     const state=dragging.current;
     if(state?.type==="select"){
       const xp=within(canvasX(e),L,W-R);
@@ -165,7 +166,7 @@ function HistoryChart({payload,mode,showVolume}:{
         <line x1={L} x2={W-R} y1={pricePosition(focused.close,low,high)} y2={pricePosition(focused.close,low,high)}
           stroke="#a3b6ca" strokeDasharray="3 5" opacity=".5"/>
       </>}
-      {drag&&dragging.current?.type==="select"&&<rect x={Math.min(drag.x0,drag.x1)} y={PRICE_TOP}
+      {drag&&Math.abs(drag.x0-drag.x1)>0&&<rect x={Math.min(drag.x0,drag.x1)} y={PRICE_TOP}
         width={Math.abs(drag.x1-drag.x0)} height={showVolume?VOL_BOTTOM-PRICE_TOP:PRICE_BOTTOM-PRICE_TOP}
         fill="#83e3cd" opacity=".16" stroke="#4cbfb3"/>}
       <text x={L} y={H-17} fontSize="12" fill="#879db0">{timeLabel(visible[0].time,intraday)}</text>
