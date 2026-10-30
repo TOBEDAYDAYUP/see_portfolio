@@ -8,23 +8,27 @@ test("chart supports exactly 1D,5D,1M,1Y,ALL with real distinct granularity",()=
   const now=new Date("2026-10-30T23:00:00.000Z");
   assert.equal(planStockChart("1D",now).interval,"5Min");
   assert.equal(planStockChart("5D",now).interval,"15Min");
-  assert.equal(planStockChart("1M",now).interval,"1Day");
+  assert.equal(planStockChart("1M",now).interval,"1Hour");
   assert.equal(planStockChart("1Y",now).interval,"1Day");
   assert.equal(planStockChart("ALL",now).interval,"1Week");
   assert.equal(planStockChart("ALL",now).start,"2016-01-01");
-  assert.equal(planStockChart("1M",now).start,"2026-09-29");
+  assert.equal(planStockChart("1M",now).start,"2026-09-30T22:40:00.000Z");
   assert.equal(planStockChart("1Y",now).start,"2025-10-29");
-  assert.equal(planStockChart("1M",now).end,"2026-10-29");
+  assert.equal(planStockChart("1M",now).end,"2026-10-30T22:40:00.000Z");
   assert.equal(planStockChart("1Y",now).end,"2026-10-29");
 });
-test("intraday excludes 20 minutes and daily bars exclude unfinished NY trading date",()=>{
+test("intraday 1D/1M excludes 20 minutes while annual daily bars exclude today",()=>{
   const now=new Date("2026-10-30T20:00:00.000Z");
   const intraday=planStockChart("1D",now);
   assert.equal(intraday.end,"2026-10-30T19:40:00.000Z");
   assert.equal(intraday.intraday,true);
-  const daily=planStockChart("1M",now);
-  assert.equal(daily.end,"2026-10-29");
-  assert.equal(daily.intraday,false);
+  const hourly=planStockChart("1M",now);
+  assert.equal(hourly.interval,"1Hour");
+  assert.equal(hourly.intraday,true);
+  assert.equal(hourly.end,"2026-10-30T19:40:00.000Z");
+  const annual=planStockChart("1Y",now);
+  assert.equal(annual.end,"2026-10-29");
+  assert.equal(annual.intraday,false);
 });
 test("timezone grouping handles premarket and DST boundaries",()=>{
   assert.equal(marketDateNY("2026-10-30T13:30:00Z"),"2026-10-30");

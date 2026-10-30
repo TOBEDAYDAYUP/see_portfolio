@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { CHART_RANGES } from "../../../lib/research/chart-utils";
 import { MIN_ZOOM_BARS, zoomChartViewport, panChartViewport, viewportBarIndex } from "../../../lib/research/chart-viewport";
+import { TARGET_VISIBLE_BARS, bucketVisibleChartBars } from "../../../lib/research/chart-density";
 import type { ChartPayload, ChartRange, ChartBar } from "../../../lib/research/chart-utils";
 
 type Mode="candles"|"line"|"bars";
@@ -79,20 +80,25 @@ function HistoryChart({payload,mode,showVolume}:{
     </div>;
   }
   const effectiveZoom=zoom??{start:0,end:bars.length-1};
-  const firstIndex=Math.max(0,Math.ceil(effectiveZoom.start-1e-8));
-  const lastIndex=Math.min(bars.length-1,Math.floor(effectiveZoom.end+1e-8));
-  const visible=bars.slice(firstIndex,lastIndex+1);
-  const currentHover=hover!==null&&hover>=firstIndex&&hover<=lastIndex?hover:null;
-  const focused=bars[currentHover??lastIndex]??visible.at(-1);
+  // Re-aggregate raw history to the same 50-candle density on every zoom.
+  const density=bucketVisibleChartBars(bars,zoom);
+  const visible=density.buckets.map(bucket=>bucket.bar);
+  const currentHover=hover!==null&&hover>=0&&hover<visible.length?hover:null;
+  const focusedGroup=density.buckets[currentHover??visible.length-1];
+  const focused=focusedGroup?.bar;
   const low0=Math.min(...visible.map(b=>b.low));
   const high0=Math.max(...visible.map(b=>b.high));
   const padding=Math.max((high0-low0)*0.08,high0*.005,.001);
   const low=low0-padding, high=high0+padding;
   const volMax=Math.max(1,...visible.map(b=>b.volume));
-  const x=(i:number)=>L+usableW*(firstIndex+i-effectiveZoom.start)/(effectiveZoom.end-effectiveZoom.start);
-  const barWidth=Math.max(1,Math.min(12,usableW/Math.max(2,effectiveZoom.end-effectiveZoom.start+1)*.65));
+  const x=(i:number)=>L+usableW*(i+.5)/visible.length;
+  const barWidth=Math.max(1,Math.min(12,usableW/visible.length*.72));
   const path=visible.map((bar,i)=>(i===0?"M":"L")+x(i).toFixed(2)+" "+pricePosition(bar.close,low,high).toFixed(2)).join(" ");
-  const intraday=payload.interval==="5Min"||payload.interval==="15Min";
+  const intraday=payload.interval==="5Min"||payload.interval==="15Min"||payload.interval==="1Hour";
+  const focusedDates=focusedGroup
+    ? timeLabel(focusedGroup.firstTime,intraday)+
+      (focusedGroup.firstTime===focusedGroup.lastTime?"":" – "+timeLabel(focusedGroup.lastTime,intraday))
+    : "No history";
   function canvasX(e:ReactPointerEvent<SVGSVGElement>):number{
     const bounds=e.currentTarget.getBoundingClientRect();
     return (e.clientX-bounds.left)/bounds.width*W;
@@ -108,7 +114,7 @@ function HistoryChart({payload,mode,showVolume}:{
   }
   function onPointerMove(e:ReactPointerEvent<SVGSVGElement>){
     const xp=within(canvasX(e),L,W-R);
-    setHover(indexAt(xp));
+    setHover(within(Math.floor((xp-L)/usableW*visible.length),0,visible.length-1));
     const state=dragging.current;
     if(!state)return;
     if(state.type==="select")setDrag({x0:state.x0,x1:xp});
@@ -135,11 +141,12 @@ function HistoryChart({payload,mode,showVolume}:{
   return <div>
     <div className="mb-3 flex flex-wrap items-start justify-between gap-3 rounded-xl bg-[#1c2a40] px-3 py-3">
       <div className="min-w-0">
-        <p className="text-xs text-slate-400">{focused?timeLabel(focused.time,intraday):"No history"} · {payload.interval} · New York time</p>
+        <p className="text-xs text-slate-400">{focusedDates} · {payload.interval} source · New York time</p>
         {focused&&<div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold tabular-nums">
           <span>O {money(focused.open)}</span><span>H {money(focused.high)}</span>
           <span>L {money(focused.low)}</span><span>C {money(focused.close)}</span>
           <span className="text-slate-400">Vol {compact(focused.volume)}</span>
+          <span className="text-slate-400">{focusedGroup?.underlyingCount??0} source bars grouped</span>
         </div>}
       </div>
       <div className="flex flex-wrap gap-2">
@@ -167,7 +174,7 @@ function HistoryChart({payload,mode,showVolume}:{
         if(e.key==="Escape"){setZoom(null);setHover(null);}
         if(e.key==="ArrowLeft"||e.key==="ArrowRight"){
           e.preventDefault();
-          const next=within((currentHover??lastIndex)+(e.key==="ArrowRight"?1:-1),firstIndex,lastIndex);
+          const next=within((currentHover??visible.length-1)+(e.key==="ArrowRight"?1:-1),0,visible.length-1);
           setHover(next);
         }
       }}>
@@ -204,7 +211,7 @@ function HistoryChart({payload,mode,showVolume}:{
           fill={bar.close>=bar.open?"#59bdac":"#d7899c"} opacity=".8"/>)}
       </>}
       {focused&&currentHover!==null&&<>
-        <line x1={x(currentHover-firstIndex)} x2={x(currentHover-firstIndex)} y1={PRICE_TOP} y2={showVolume?VOL_BOTTOM:PRICE_BOTTOM}
+        <line x1={x(currentHover)} x2={x(currentHover)} y1={PRICE_TOP} y2={showVolume?VOL_BOTTOM:PRICE_BOTTOM}
           stroke="#a3b6ca" strokeDasharray="4 4" strokeWidth="1.2"/>
         <line x1={L} x2={W-R} y1={pricePosition(focused.close,low,high)} y2={pricePosition(focused.close,low,high)}
           stroke="#a3b6ca" strokeDasharray="3 5" opacity=".5"/>
@@ -213,11 +220,11 @@ function HistoryChart({payload,mode,showVolume}:{
         width={Math.abs(drag.x1-drag.x0)} height={showVolume?VOL_BOTTOM-PRICE_TOP:PRICE_BOTTOM-PRICE_TOP}
         fill="#83e3cd" opacity=".16" stroke="#4cbfb3"/>}
       <text x={L} y={H-17} fontSize="12" fill="#879db0">{timeLabel(visible[0].time,intraday)}</text>
-      <text x={W-R} y={H-17} fontSize="12" fill="#879db0" textAnchor="end">{timeLabel(visible.at(-1)!.time,intraday)}</text>
+      <text x={W-R} y={H-17} fontSize="12" fill="#879db0" textAnchor="end">{timeLabel(density.buckets.at(-1)!.lastTime,intraday)}</text>
     </svg>
     <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
-      <span>{visible.length} bars in view · wheel / trackpad pinch to zoom · horizontal swipe to pan · drag to select · Esc to reset</span>
-      <span>{zoom?"Zoomed interval":"Full selected period"}</span>
+      <span>{visible.length} / {TARGET_VISIBLE_BARS} displayed candles · {density.rawCount} real source bars · scroll / pinch to zoom · drag to select</span>
+      <span>{zoom?"Zoomed interval":"Full selected period"} · OHLCV aggregation</span>
     </div>
   </div>;
 }
@@ -243,11 +250,14 @@ function ChartForRange({symbol,range,mode,showVolume}:{
   if(result.status!=="ok")return <p role="alert" className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-5 text-sm text-amber-200">{result.message}</p>;
   return <>
     {result.data.notice&&<p role="status" className="mb-4 rounded-xl border border-amber-400/25 bg-amber-400/5 p-4 text-xs leading-6 text-amber-200">{result.data.notice}</p>}
+    {result.data.bars.length<50&&<p role="status" className="mb-4 rounded-xl border border-amber-400/25 bg-amber-400/5 p-4 text-xs leading-6 text-amber-200">
+      Only {result.data.bars.length} actual market bars are available in this period, so a genuine 50-candle display is not possible. No prices or volume have been invented.
+    </p>}
     <HistoryChart key={symbol+"-"+range} payload={result.data} mode={mode} showVolume={showVolume}/>
     <p className="mt-3 text-[11px] leading-5 text-slate-500">
       {result.data.interval} OHLCV · split-adjusted · {result.data.source==="Alpaca SIP"?"SIP consolidated US trades & volume (delayed).":"IEX exchange-only trades & volume; not the consolidated US market."}
       {result.data.delayedMinutes>0?" Latest 20 minutes excluded; not real time.":" Daily/weekly bars omit today's potentially unfinished session."}
-      {result.data.asOf?" Last bar: "+timeLabel(result.data.asOf,result.data.interval.endsWith("Min"))+" ET.":""}
+      {result.data.asOf?" Last bar: "+timeLabel(result.data.asOf,result.data.interval.endsWith("Min")||result.data.interval.endsWith("Hour"))+" ET.":""}
       {range==="ALL"?" All available weekly history requested since 2016.":""}
     </p>
   </>;
