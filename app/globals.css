@@ -55,6 +55,27 @@ body {
 }
 .surface-table-head { background: #213148; }
 
+/* Workspace switcher: plain text, no pill/box even on hover in light mode. */
+.normal-topbar button.workspace-nav-button,
+.normal-topbar button.workspace-nav-button:hover,
+.normal-topbar button.workspace-nav-button:active {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+.normal-topbar button.workspace-nav-button:focus-visible {
+  outline: 2px solid #7ce0cc;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+.see-shell[data-theme="light"] .normal-topbar button.workspace-nav-button:hover,
+.see-shell[data-theme="light"] .normal-topbar button.workspace-nav-button:active {
+  background: transparent;
+}
+.see-shell[data-theme="light"] .normal-topbar button.workspace-nav-button[aria-current="page"] {
+  color: #13796c;
+}
+
 /* Left navigation ONLY: retain the dark-blue frosted glass. */
 .glass-sidebar {
   background:

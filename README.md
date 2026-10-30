@@ -27,6 +27,14 @@ npm run build
 
 GitHub Actions runs these checks automatically on pull requests and pushes.
 
+## Portfolio / Research workspaces
+
+- The global header has two **plain-text, unboxed** workspace choices immediately to the right of the SEE Portfolio brand: **Portfolio** and **Research**.
+- Portfolio retains its existing sidebar (Holdings, Analysis, Valuations, Dividends, Returns, Updates, Daily Brief, Settings) and all existing Alpaca/Paper functionality.
+- Research has its own sidebar (Stock Search, My Watchlist, Stock Reports, News & Updates), and preserves the user's Portfolio page selection when switching back.
+- At this milestone, Research is a clearly labeled foundation/preview only. Verified symbol search, persistent independent watchlists, stock reports and news are the next implementation steps; no demo stocks are treated as real holdings or verified research.
+- The mobile research navigation and light/dark styling are also included.
+
 ## Project structure
 
 ```text
