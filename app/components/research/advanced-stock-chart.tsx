@@ -250,11 +250,14 @@ function ChartForRange({symbol,range,mode,showVolume}:{
   if(result.status!=="ok")return <p role="alert" className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-5 text-sm text-amber-200">{result.message}</p>;
   return <>
     {result.data.notice&&<p role="status" className="mb-4 rounded-xl border border-amber-400/25 bg-amber-400/5 p-4 text-xs leading-6 text-amber-200">{result.data.notice}</p>}
+    {result.data.bars.length<50&&<p role="status" className="mb-4 rounded-xl border border-amber-400/25 bg-amber-400/5 p-4 text-xs leading-6 text-amber-200">
+      Only {result.data.bars.length} actual market bars are available in this period, so a genuine 50-candle display is not possible. No prices or volume have been invented.
+    </p>}
     <HistoryChart key={symbol+"-"+range} payload={result.data} mode={mode} showVolume={showVolume}/>
     <p className="mt-3 text-[11px] leading-5 text-slate-500">
       {result.data.interval} OHLCV · split-adjusted · {result.data.source==="Alpaca SIP"?"SIP consolidated US trades & volume (delayed).":"IEX exchange-only trades & volume; not the consolidated US market."}
       {result.data.delayedMinutes>0?" Latest 20 minutes excluded; not real time.":" Daily/weekly bars omit today's potentially unfinished session."}
-      {result.data.asOf?" Last bar: "+timeLabel(result.data.asOf,result.data.interval.endsWith("Min"))+" ET.":""}
+      {result.data.asOf?" Last bar: "+timeLabel(result.data.asOf,result.data.interval.endsWith("Min")||result.data.interval.endsWith("Hour"))+" ET.":""}
       {range==="ALL"?" All available weekly history requested since 2016.":""}
     </p>
   </>;
