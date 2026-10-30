@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { loadResearchReport, validateResearchSymbol } from "../../../../lib/research/server";
-import type { StockReport } from "../../../../lib/research/types";
 
 const headers={"Cache-Control":"private, no-store, max-age=0"};
 export async function GET(request:Request){
