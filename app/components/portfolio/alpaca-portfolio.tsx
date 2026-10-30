@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { AlpacaPortfolioResult, AlpacaPosition } from "../../../lib/alpaca/types";
 import PortfolioOverview from "./portfolio-overview";
+import PortfolioResearchMetrics from "./portfolio-research-metrics";
 import type { Currency } from "../../../types/app";
 
 type Props = { currency: Currency; onSettings: () => void };
@@ -83,11 +84,6 @@ export default function AlpacaPortfolio({currency,onSettings}:Props) {
     <div className="mt-5 flex gap-3"><button onClick={refresh} disabled={refreshing} className="rounded-xl bg-[#83e3cd] px-4 py-2 text-sm font-semibold text-[#102139]">{refreshing?"Checking…":"Retry"}</button><button onClick={onSettings} className="rounded-xl border border-white/15 px-4 py-2 text-sm">Connection settings</button></div>
   </div>;
 
-  const stats=[
-    {label:"Cash",value:dollar(data.account.cash)},
-    {label:"Buying power",value:dollar(data.account.buyingPower)},
-    {label:"Previous equity",value:dollar(data.account.lastEquity)},
-  ];
   return <div>
     <PortfolioOverview account={data.account} history={data.history} historyAvailable={data.historyAvailable} positionCount={data.positions.length}/>
     <div className="mb-5 mt-7 flex flex-wrap items-center justify-between gap-3">
@@ -95,7 +91,7 @@ export default function AlpacaPortfolio({currency,onSettings}:Props) {
       <button disabled={refreshing} onClick={refresh} className="rounded-xl border border-white/15 bg-[#28384d] px-4 py-2.5 text-xs font-semibold text-slate-200">{refreshing?"Refreshing…":"↻ Refresh from Alpaca"}</button>
     </div>
     {currency==="CNY"&&<div className="mb-5 rounded-xl border border-amber-400/20 bg-amber-400/5 p-3 text-xs leading-5 text-amber-200">Your display preference is CNY, but real Alpaca balances are shown in their original USD. We will not use a fictional exchange rate for live account data.</div>}
-    <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">{stats.map(stat=><div key={stat.label} className="surface-panel rounded-2xl p-5"><p className="text-sm text-slate-400">{stat.label}</p><strong className="mt-2 block text-2xl font-semibold tabular-nums">{stat.value}</strong></div>)}</div>
+    <PortfolioResearchMetrics positions={data.positions} annualPerformance={data.annualPerformance}/>
     <PositionsTable positions={data.positions}/>
     <p className="mt-5 text-xs leading-5 text-slate-500">Paper trading is simulated. Balances, the single equity chart and holdings come from Alpaca Paper. Market valuations reflect Alpaca&apos;s reported pricing and may be delayed.</p>
   </div>;
