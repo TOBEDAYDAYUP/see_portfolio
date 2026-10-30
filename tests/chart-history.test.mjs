@@ -12,6 +12,10 @@ test("chart supports exactly 1D,5D,1M,1Y,ALL with real distinct granularity",()=
   assert.equal(planStockChart("1Y",now).interval,"1Day");
   assert.equal(planStockChart("ALL",now).interval,"1Week");
   assert.equal(planStockChart("ALL",now).start,"2016-01-01");
+  assert.equal(planStockChart("1M",now).start,"2026-09-29");
+  assert.equal(planStockChart("1Y",now).start,"2025-10-29");
+  assert.equal(planStockChart("1M",now).end,"2026-10-29");
+  assert.equal(planStockChart("1Y",now).end,"2026-10-29");
 });
 test("intraday excludes 20 minutes and daily bars exclude unfinished NY trading date",()=>{
   const now=new Date("2026-10-30T20:00:00.000Z");
