@@ -2,7 +2,7 @@
 
 import { companies } from "../../../lib/demo/market";
 import type { Preferences } from "../../../hooks/use-preferences";
-import type { Page } from "../../../types/app";
+import type { Currency, Delivery, Language, Page, Tone } from "../../../types/app";
 
 type Props={prefs:Preferences;go:(page:Page)=>void;notificationCount:number};
 /** Appearance, notifications, news filters and followed companies. */
