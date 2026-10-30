@@ -36,8 +36,22 @@ function HistoryChart({payload,mode,showVolume}:{
   const [drag,setDrag]=useState<{x0:number;x1:number}|null>(null);
   const dragging=useRef<{type:"select"|"pan";x0:number;zoom0:Zoom|null}|null>(null);
   if(!bars.length)return <div role="status" className="grid min-h-[280px] place-items-center rounded-xl border border-dashed border-white/15 p-5 text-sm text-slate-400">
-    No IEX bars available for this interval. Try another time range.
+    No market bars available for this interval. Try another time range.
   </div>;
+  if(bars.length===1){
+    const only=bars[0];
+    return <div role="status" className="my-4 rounded-xl border border-amber-400/25 bg-amber-400/5 p-5">
+      <h4 className="font-semibold text-amber-200">Not enough bars to display a meaningful price chart</h4>
+      <p className="mt-2 text-sm leading-6 text-slate-400">
+        The market data provider returned only one bar for this range; no line, candle series, or missing prices have been fabricated.
+      </p>
+      <p className="mt-3 text-xs leading-6 text-slate-300">
+        Actual bar: {timeLabel(only.time,payload.interval.endsWith("Min"))} ET ·
+        O {money(only.open)} · H {money(only.high)} · L {money(only.low)} ·
+        C {money(only.close)} · Volume {compact(only.volume)}
+      </p>
+    </div>;
+  }
   const effectiveZoom=zoom??{start:0,end:bars.length-1};
   const visible=bars.slice(effectiveZoom.start,effectiveZoom.end+1);
   const focused=bars[hover??effectiveZoom.end]??visible.at(-1);
@@ -199,9 +213,10 @@ function ChartForRange({symbol,range,mode,showVolume}:{
   if(!result)return <div role="status" className="grid min-h-[300px] place-items-center text-sm text-slate-400">Loading {range} Alpaca OHLCV market data…</div>;
   if(result.status!=="ok")return <p role="alert" className="rounded-xl border border-amber-400/20 bg-amber-400/5 p-5 text-sm text-amber-200">{result.message}</p>;
   return <>
+    {result.data.notice&&<p role="status" className="mb-4 rounded-xl border border-amber-400/25 bg-amber-400/5 p-4 text-xs leading-6 text-amber-200">{result.data.notice}</p>}
     <HistoryChart key={symbol+"-"+range} payload={result.data} mode={mode} showVolume={showVolume}/>
     <p className="mt-3 text-[11px] leading-5 text-slate-500">
-      {result.data.interval} OHLCV · split-adjusted · IEX exchange only, not consolidated US trading volume.
+      {result.data.interval} OHLCV · split-adjusted · {result.data.source==="Alpaca SIP"?"SIP consolidated US trades & volume (delayed).":"IEX exchange-only trades & volume; not the consolidated US market."}
       {result.data.delayedMinutes>0?" Latest 20 minutes excluded; not real time.":" Daily/weekly bars omit today's potentially unfinished session."}
       {result.data.asOf?" Last bar: "+timeLabel(result.data.asOf,result.data.interval.endsWith("Min"))+" ET.":""}
       {range==="ALL"?" All available weekly history requested since 2016.":""}
@@ -219,7 +234,7 @@ export default function AdvancedStockChart({symbol}:{symbol:string}){
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
       <div>
         <h3 className="text-base font-semibold">Price &amp; Trading Volume</h3>
-        <p className="mt-1 text-xs text-slate-400">IEX OHLCV · interactive historical chart</p>
+        <p className="mt-1 text-xs text-slate-400">Historical OHLCV · consolidated data when available</p>
       </div>
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Select chart period">
         {CHART_RANGES.map(v=><button key={v} type="button" className={button(range===v)}

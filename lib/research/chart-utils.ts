@@ -1,4 +1,4 @@
-/** Price-chart inputs and pure transformations; all values originate from Alpaca IEX bars. */
+/** Price-chart inputs and pure transformations; market prices remain provider-supplied. */
 export type ChartRange = "1D"|"5D"|"1M"|"1Y"|"ALL";
 export const CHART_RANGES:readonly ChartRange[]=["1D","5D","1M","1Y","ALL"];
 export type ChartBar={
@@ -9,7 +9,9 @@ export type ChartPayload={
   symbol:string;
   range:ChartRange;
   interval:"5Min"|"15Min"|"1Day"|"1Week";
-  source:"Alpaca IEX";
+  source:"Alpaca SIP"|"Alpaca IEX";
+  quality:"sufficient"|"limited"|"insufficient";
+  notice:string|null;
   adjusted:"split";
   delayedMinutes:number;
   bars:ChartBar[];
@@ -63,7 +65,7 @@ export function parseStockChartBar(raw:unknown):ChartBar|null{
     low>Math.min(open,close)||high<low)return null;
   return {time,open,high,low,close,volume};
 }
-/** Sort/deduplicate; restrict intraday 1D/5D to latest actual IEX trading sessions. */
+/** Sort/deduplicate; restrict intraday 1D/5D to latest available trading sessions. */
 export function selectStockChartBars(rows:ChartBar[],range:ChartRange):ChartBar[]{
   const sorted=[...new Map(rows.map(row=>[row.time,row])).values()]
     .sort((a,b)=>a.time.localeCompare(b.time));
@@ -71,4 +73,12 @@ export function selectStockChartBars(rows:ChartBar[],range:ChartRange):ChartBar[
   const days=[...new Set(sorted.map(b=>dateInNewYork(b.time)))].sort();
   const selected=new Set(days.slice(range==="1D"?-1:-5));
   return sorted.filter(b=>selected.has(dateInNewYork(b.time)));
+}
+
+/** Honest coverage signals; volume comes from a real feed, never interpolated. */
+export function assessChartCoverage(range:ChartRange,bars:ChartBar[]):ChartPayload["quality"]{
+  if(bars.length<2 || bars.every(b=>b.volume===0))return "insufficient";
+  if(bars.filter(b=>b.volume===0).length/bars.length>=0.5)return "limited";
+  const min:Record<ChartRange,number>={"1D":12,"5D":50,"1M":12,"1Y":100,"ALL":40};
+  return bars.length<min[range]?"limited":"sufficient";
 }
