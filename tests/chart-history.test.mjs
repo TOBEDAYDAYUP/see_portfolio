@@ -80,9 +80,9 @@ test("limited intraday/monthly data is flagged without inventing volume or flat 
     time:new Date(Date.UTC(2026,8,29+i,20)).toISOString(),
     open:3.2,high:3.2,low:3.2,close:3.2,volume:i===5?500:0,
   }));
-  assert.equal(assessChartCoverage("1D",bars),"sufficient");
+  assert.equal(assessChartCoverage("1D",bars),"limited");
   assert.equal(assessChartCoverage("5D",bars),"limited");
-  assert.equal(assessChartCoverage("1M",bars),"sufficient");
+  assert.equal(assessChartCoverage("1M",bars),"limited");
   assert.equal(assessChartCoverage("1Y",bars),"limited");
   assert.equal(bars.filter(b=>b.volume===0).length,22);
 });
