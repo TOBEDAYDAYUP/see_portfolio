@@ -14,7 +14,7 @@ export function SiteHeader({go}:{go:Go}) {
           <span className="flex flex-col"><span className="text-base font-bold tracking-tight text-white">SEE Portfolio</span><span className="hidden text-[10px] tracking-[.12em] text-slate-500 sm:block">INVESTMENT INTELLIGENCE</span></span>
         </button>
         <div className="hidden text-xs text-slate-400 lg:block">Understand your investments. Without the noise.</div>
-        <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 surface-pill px-3 py-1.5 text-[11px] font-semibold tracking-wide text-emerald-200">DEMO MODE</span>
+        <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 surface-pill px-3 py-1.5 text-[11px] font-semibold tracking-wide text-emerald-200">PAPER + DEMO</span>
       </div>
     </header>
   </>;

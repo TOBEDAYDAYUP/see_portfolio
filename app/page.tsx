@@ -27,11 +27,11 @@ export default function Home() {
       <Sidebar page={page} go={go} t={t}/>
       <main className="min-w-0 flex-1 px-5 pb-16 pt-7 sm:px-9 lg:px-12">
         <MobileNavigation page={page} go={go} t={t}/>
-        <div className="mb-7 rounded-xl border border-slate-500/30 bg-[#1c2a40] surface-panel px-4 py-3 text-xs leading-5 text-slate-300"><strong className="text-[#a4f1df]">{t("Prototype preview.","原型预览。")}</strong> {t("Market figures and news are fictional placeholders. No live data, AI scores, or push notifications are connected yet.","行情与新闻目前为虚构演示数据。尚未连接实时数据、AI 评分或实际消息推送。")}</div>
-        {portfolioLinks.some(link=>link.id===page)&&<PortfolioDashboard section={page as PortfolioSection} currency={currency}/>}
+        {page!=="holdings"&&<div className="mb-7 rounded-xl border border-slate-500/30 bg-[#1c2a40] surface-panel px-4 py-3 text-xs leading-5 text-slate-300"><strong className="text-[#a4f1df]">{t("Prototype preview.","原型预览。")}</strong> {t("Market figures and news are fictional placeholders. No live data, AI scores, or push notifications are connected yet.","行情与新闻目前为虚构演示数据。尚未连接实时数据、AI 评分或实际消息推送。")}</div>}
+        {portfolioLinks.some(link=>link.id===page)&&<PortfolioDashboard section={page as PortfolioSection} currency={currency} onSettings={()=>go("settings")}/>}
         {page==="brief"&&<DailyBrief prefs={prefs} go={go} briefItems={briefItems} relatedCount={related.length}/>}
         {page==="settings"&&<SettingsPanel prefs={prefs} go={go} notificationCount={notificationCount}/>}
-        <footer className="mt-12 border-t border-white/10 pt-6 text-xs leading-6 text-slate-500">SEE Portfolio · {t("Prototype · Financial data and news are illustrative, not investment advice.","原型版本 · 财务数据和新闻仅作演示，不构成投资建议。")}</footer>
+        <footer className="mt-12 border-t border-white/10 pt-6 text-xs leading-6 text-slate-500">SEE Portfolio · {t("Paper trading is simulated. Other research modules remain prototypes; not investment advice.","模拟盘交易不涉及真实资金。其他研究模块仍为原型；不构成投资建议。")}</footer>
       </main>
     </div>
   </div>;
