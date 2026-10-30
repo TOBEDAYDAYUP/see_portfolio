@@ -77,7 +77,8 @@ export function selectStockChartBars(rows:ChartBar[],range:ChartRange):ChartBar[
 
 /** Honest coverage signals; volume comes from a real feed, never interpolated. */
 export function assessChartCoverage(range:ChartRange,bars:ChartBar[]):ChartPayload["quality"]{
-  if(bars.length<2)return "insufficient";
+  if(bars.length<2 || bars.every(b=>b.volume===0))return "insufficient";
+  if(bars.filter(b=>b.volume===0).length/bars.length>=0.5)return "limited";
   const min:Record<ChartRange,number>={"1D":12,"5D":50,"1M":12,"1Y":100,"ALL":40};
   return bars.length<min[range]?"limited":"sufficient";
 }
