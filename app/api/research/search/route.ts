@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { loadActiveResearchAssets, rankResearchMatches } from "../../../../lib/research/server";
-import type { ResearchAsset } from "../../../../lib/research/types";
 
 const headers={"Cache-Control":"private, no-store, max-age=0"};
 export async function GET(request:Request){
