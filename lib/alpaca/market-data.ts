@@ -20,7 +20,7 @@ function validateSymbols(symbols: string[]): void {
 /**
  * Alpaca's free IEX market-data feed, complete daily bars only.
  * Paginate because the multi-symbol response limit applies to ALL symbols together.
- * Keep API credentials on the server; never send these data requests from React.
+ * Request ~14.5 months to obtain at least 200 aligned stock trading returns.\n * Keep API credentials on the server; never send these data requests from React.
  */
 export async function loadDailyStockCloses(symbols: string[]): Promise<Record<string, DailyClose[]>> {
   validateSymbols(symbols);
@@ -32,7 +32,7 @@ export async function loadDailyStockCloses(symbols: string[]): Promise<Record<st
   // Avoid including today's unfinished market session.
   end.setUTCDate(end.getUTCDate() - 1);
   const start = new Date(end);
-  start.setUTCDate(start.getUTCDate() - 235);
+  start.setUTCDate(start.getUTCDate() - 440);
   const params = new URLSearchParams({
     symbols: symbols.join(","),
     timeframe: "1Day",
