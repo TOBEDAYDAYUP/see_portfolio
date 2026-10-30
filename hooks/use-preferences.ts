@@ -19,6 +19,8 @@ export function usePreferences() {
   const t = (english:string,chinese:string) => language === "zh" ? chinese : english;
 
   useEffect(() => {
+    // Read browser storage after hydration, not during server rendering.
+    const frame = requestAnimationFrame(() => {
     try {
       const get = (key:string) => localStorage.getItem(key);
       const savedList = get("see-watchlist-v1");
@@ -39,6 +41,8 @@ export function usePreferences() {
       if(get("see-theme-v1")==="light") setTheme("light");
     } catch { /* Use safe defaults when storage is unavailable. */ }
     setLoaded(true);
+    });
+    return () => cancelAnimationFrame(frame);
   },[]);
   useEffect(() => {
     if(!loaded) return;
