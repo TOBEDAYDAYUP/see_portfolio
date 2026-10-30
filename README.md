@@ -27,6 +27,14 @@ npm run build
 
 GitHub Actions runs these checks automatically on pull requests and pushes.
 
+### Historical chart data quality update
+
+- Research charts now request **delayed SIP consolidated historical bars first**, with the last 20 minutes excluded for intraday queries. Alpaca's documented Basic Trading API access generally permits historical SIP data older than 15 minutes without the paid real-time SIP plan.
+- If Alpaca explicitly denies historical SIP access (HTTP 403/422), charts fall back to the existing **IEX** feed and label that limitation. No fabricated consolidated volumes.
+- Charts display a **limited/insufficient data warning** when historical bars are too sparse or when at least half the bars report zero volume. If only one or no bar is returned, the screen shows a factual empty/one-bar state instead of a misleading huge one-candle plot.
+- Intraday warnings identify the last *actual available New York market date*, so an old bar (e.g. Oct 27 when viewing on Oct 30) is not presented as today's market session.
+- **Not changed:** Portfolio Holdings, portfolio risk methodology, Research VaR/ES and company news. Those continue to use the prior IEX-based calculation pipeline until separately reviewed.
+
 ## Research Stock Report chart v0.2 — OHLCV and interactive history
 
 In **Research → Stock Reports**, the previous fixed daily-close line is replaced with an interactive price/volume chart:
