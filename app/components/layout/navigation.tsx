@@ -13,7 +13,7 @@ export function SiteHeader({go,workspace,onWorkspaceChange}:{
   onWorkspaceChange:(next:Workspace)=>void;
 }) {
   const navClass=(active:boolean)=>
-    "workspace-nav-button whitespace-nowrap bg-transparent px-1 py-2 text-[13px] font-normal transition-colors sm:text-sm "+
+    "workspace-nav-button whitespace-nowrap bg-transparent px-1 py-2 text-sm font-medium transition-colors sm:text-base "+
     (active?"text-[#9cebd6]":"text-slate-400 hover:text-white");
 
   return <header className="normal-topbar sticky top-0 z-40 border-b border-white/10 bg-[#101b2d]/95">
