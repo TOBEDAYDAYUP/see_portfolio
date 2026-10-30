@@ -1,8 +1,10 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #091321;
+  --foreground: #edf5fa;
+  --glass-outline: rgba(180, 228, 239, 0.13);
+  --glass-outline-hover: rgba(151, 241, 226, 0.27);
 }
 
 @theme inline {
@@ -12,15 +14,236 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
+  min-height: 100vh;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(116, 231, 205, 0.35);
+  color: #fff;
+}
+
+/* Dark Liquid Glass: keep a strong navy foundation so financial data stays legible. */
+.see-shell {
+  position: relative;
+  isolation: isolate;
+  background-color: #091321;
+  background-image:
+    radial-gradient(ellipse 56% 32% at 83% 7%, rgba(46, 123, 149, 0.2), transparent 75%),
+    radial-gradient(ellipse 44% 35% at 18% 76%, rgba(35, 119, 117, 0.12), transparent 75%),
+    linear-gradient(165deg, #0c1728 0%, #091321 47%, #0d1c2b 100%);
+}
+
+.see-shell::before {
+  content: "";
+  pointer-events: none;
+  position: fixed;
+  z-index: -1;
+  inset: 70px 0 0;
+  background:
+    radial-gradient(ellipse 30% 32% at 75% 12%, rgba(100, 199, 206, .1), transparent 85%),
+    radial-gradient(ellipse 29% 35% at 40% 84%, rgba(92, 125, 202, .06), transparent 86%);
+}
+
+.glass-topbar {
+  background: rgba(12, 24, 41, 0.76);
+  border-bottom: 1px solid rgba(202, 246, 250, 0.12);
+  -webkit-backdrop-filter: saturate(155%) blur(24px);
+  backdrop-filter: saturate(155%) blur(24px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 15px 40px rgba(1, 8, 21, 0.16);
+}
+
+.glass-sidebar {
+  background:
+    linear-gradient(165deg, rgba(24, 43, 62, 0.78), rgba(10, 23, 40, 0.74));
+  border-right: 1px solid rgba(200, 245, 245, 0.12);
+  -webkit-backdrop-filter: saturate(140%) blur(24px);
+  backdrop-filter: saturate(140%) blur(24px);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.025);
+}
+
+.glass-panel,
+.glass-feature {
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(145deg, rgba(36, 57, 79, 0.75) 0%, rgba(18, 34, 55, 0.78) 55%, rgba(15, 32, 51, 0.77) 100%);
+  border: 1px solid var(--glass-outline);
+  -webkit-backdrop-filter: saturate(140%) blur(16px);
+  backdrop-filter: saturate(140%) blur(16px);
+  box-shadow:
+    inset 0 1px 0 rgba(244, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(9, 17, 29, 0.18),
+    0 17px 44px -28px rgba(0, 4, 13, .83),
+    0 0 0 1px rgba(155, 224, 221, 0.02);
+  transition:
+    border-color 260ms ease,
+    box-shadow 300ms ease,
+    background-color 300ms ease,
+    transform 300ms cubic-bezier(.2,.7,.2,1);
+}
+
+.glass-panel::before,
+.glass-feature::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: .55;
+  background:
+    radial-gradient(
+      280px circle at var(--glass-x, 26%) var(--glass-y, 0%),
+      rgba(183, 248, 242, 0.115),
+      rgba(122, 215, 213, 0.03) 43%,
+      transparent 75%
+    ),
+    linear-gradient(150deg, rgba(255, 255, 255, 0.07), transparent 26%);
+  transition: opacity 300ms ease;
+}
+
+.glass-panel:hover,
+.glass-panel:focus-within,
+.glass-feature:hover {
+  border-color: var(--glass-outline-hover);
+  box-shadow:
+    inset 0 1px 0 rgba(236, 255, 254, .16),
+    inset 0 -1px 0 rgba(9, 17, 29, .16),
+    0 22px 60px -32px rgba(0, 8, 23, .9),
+    0 0 28px -21px rgba(99, 230, 213, .28);
+}
+
+.glass-panel:hover::before,
+.glass-panel:focus-within::before,
+.glass-feature:hover::before {
+  opacity: 1;
+}
+
+/* A gentle moving reflection on compact metric tiles only, not big charts/tables. */
+.glass-stat {
+  overflow: hidden;
+}
+
+.glass-stat::after {
+  content: "";
+  position: absolute;
+  top: -75%;
+  left: -65%;
+  width: 40%;
+  height: 250%;
+  transform: rotate(25deg) translateX(-180%);
+  background: linear-gradient(90deg, transparent, rgba(230, 255, 252, .1), transparent);
+  pointer-events: none;
+  transition: transform 720ms cubic-bezier(.2,.75,.2,1);
+}
+
+.glass-stat:hover {
+  transform: translateY(-3px);
+}
+
+.glass-stat:hover::after {
+  transform: rotate(25deg) translateX(670%);
+}
+
+.glass-feature {
+  background:
+    radial-gradient(ellipse at 13% 0%, rgba(69, 159, 161, .23), transparent 65%),
+    linear-gradient(135deg, rgba(28, 70, 75, .8), rgba(17, 35, 58, .8));
+}
+
+.glass-nav-item {
+  position: relative;
+  border: 1px solid transparent;
+  background: transparent;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 180ms ease, border-color 180ms ease, box-shadow 220ms ease;
+}
+
+.glass-nav-item:hover {
+  background: rgba(195, 229, 242, .08);
+  border-color: rgba(208, 240, 248, .08);
+}
+
+.glass-nav-item[aria-current="page"] {
+  background: linear-gradient(115deg, rgba(103, 194, 192, .16), rgba(73, 106, 151, .14));
+  border-color: rgba(156, 231, 220, .19);
+  box-shadow: inset 0 1px 0 rgba(220, 255, 246, .07), 0 5px 18px rgba(0, 7, 16, .12);
+}
+
+.glass-nav-item[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 22%;
+  height: 56%;
+  width: 2px;
+  border-radius: 3px;
+  background: #80e6d2;
+  box-shadow: 0 0 12px rgba(111, 244, 215, .52);
+}
+
+.glass-field {
+  background: rgba(12, 26, 44, 0.72);
+  border-color: rgba(186, 227, 234, .15);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.glass-field:focus-visible {
+  border-color: rgba(142, 233, 216, .6);
+  box-shadow: 0 0 0 3px rgba(103, 220, 195, .1), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.glass-pill {
+  background: linear-gradient(125deg, rgba(27, 83, 79, .4), rgba(36, 63, 80, .5));
+  border: 1px solid rgba(137, 240, 210, .18);
+  box-shadow: inset 0 1px 0 rgba(234, 255, 250, .07);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+.glass-table-head {
+  background: rgba(121, 173, 195, .07);
+}
+
+.glass-panel table tbody tr {
+  transition: background-color 160ms ease;
+}
+
+.glass-panel table tbody tr:hover {
+  background-color: rgba(118, 214, 213, 0.08);
+}
+
+@media (max-width: 767px) {
+  .glass-panel,
+  .glass-feature {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-panel,
+  .glass-panel::before,
+  .glass-panel::after,
+  .glass-feature,
+  .glass-feature::before,
+  .glass-nav-item,
+  .glass-field {
+    transition: none !important;
+    animation: none !important;
+  }
+  .glass-stat:hover {
+    transform: none;
+  }
 }
