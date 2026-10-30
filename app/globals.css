@@ -764,6 +764,10 @@ body {
 }
 .glass-refract {
   overflow: hidden;
+  /* Filtering the parent would make it a backdrop root and block real
+     refraction on the inner SVG lens. Filter the pseudo layers instead. */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
   background:
     radial-gradient(ellipse 95% 72% at 95% 1%, rgba(129, 240, 233, .13), transparent 78%),
     linear-gradient(146deg, rgba(44, 82, 108, .59), rgba(15, 33, 55, .57) 72%, rgba(28, 63, 88, .59));
@@ -775,6 +779,10 @@ body {
     inset 0 -1.5px 0 rgba(116, 235, 229, .24),
     0 24px 57px -26px rgba(0, 6, 25, .81),
     0 0 35px -28px rgba(114, 245, 233, .29);
+}
+.glass-refract::before {
+  -webkit-backdrop-filter: blur(15px) saturate(140%);
+  backdrop-filter: blur(15px) saturate(140%);
 }
 .glass-refract > * {
   position: relative;
