@@ -63,9 +63,11 @@ function parsePosition(value: unknown): AlpacaPosition | null {
 }
 function parseHistory(raw: unknown): PortfolioHistoryPoint[] {
   if (!isObject(raw) || !Array.isArray(raw.timestamp) || !Array.isArray(raw.equity)) return [];
-  return raw.timestamp.flatMap((value, index): PortfolioHistoryPoint[] => {
+  const timestamps: unknown[] = raw.timestamp;
+  const equities: unknown[] = raw.equity;
+  return timestamps.flatMap((value, index): PortfolioHistoryPoint[] => {
     const timestamp = asNumber(value);
-    const equity = asNumber(raw.equity[index]);
+    const equity = asNumber(equities[index]);
     return timestamp !== null && equity !== null && equity >= 0 ? [{ timestamp, equity }] : [];
   });
 }
