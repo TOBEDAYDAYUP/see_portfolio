@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { CHART_RANGES } from "../../../lib/research/chart-utils";
+import { MIN_ZOOM_BARS, zoomChartViewport, panChartViewport, viewportBarIndex } from "../../../lib/research/chart-viewport";
 import type { ChartPayload, ChartRange, ChartBar } from "../../../lib/research/chart-utils";
 
 type Mode="candles"|"line"|"bars";
@@ -23,9 +24,6 @@ function timeLabel(time:string,intraday:boolean){
 function pricePosition(price:number,low:number,high:number){
   return PRICE_TOP+(high-price)/(high-low)*(PRICE_BOTTOM-PRICE_TOP);
 }
-function scrollToAbsolute(pointerX:number,length:number):number{
-  return Math.max(0,Math.min(length-1,Math.round((pointerX-L)/usableW*(length-1))));
-}
 function within(v:number,lower:number,upper:number){return Math.min(upper,Math.max(lower,v));}
 function HistoryChart({payload,mode,showVolume}:{
   payload:ChartPayload;mode:Mode;showVolume:boolean;
@@ -35,6 +33,34 @@ function HistoryChart({payload,mode,showVolume}:{
   const [hover,setHover]=useState<number|null>(null);
   const [drag,setDrag]=useState<{x0:number;x1:number}|null>(null);
   const dragging=useRef<{type:"select"|"pan";x0:number;zoom0:Zoom|null}|null>(null);
+  const chartRef=useRef<SVGSVGElement|null>(null);
+  const isZoomed=zoom!==null;
+  // Use a native, non-passive listener: React/browser wheel listeners can be
+  // passive and cannot reliably suppress full-page pinch/scroll on the chart.
+  useEffect(()=>{
+    const element=chartRef.current;
+    if(!element||bars.length<=MIN_ZOOM_BARS)return;
+    const handleWheel=(event:WheelEvent)=>{
+      const rect=element.getBoundingClientRect();
+      if(rect.width<=0)return;
+      const viewX=(event.clientX-rect.left)/rect.width*W;
+      const fraction=within((viewX-L)/usableW,0,1);
+      const unit=event.deltaMode===1?16:event.deltaMode===2?320:1;
+      if(event.deltaY!==0 && (event.ctrlKey||Math.abs(event.deltaY)>=Math.abs(event.deltaX))){
+        if(event.cancelable)event.preventDefault();
+        setZoom(previous=>zoomChartViewport(previous,bars.length,fraction,event.deltaY*unit));
+      }else if(isZoomed && event.deltaX!==0){
+        if(event.cancelable)event.preventDefault();
+        setZoom(previous=>{
+          if(!previous)return previous;
+          const deltaBars=event.deltaX*unit/(rect.width*usableW/W)*(previous.end-previous.start);
+          return panChartViewport(previous,bars.length,deltaBars);
+        });
+      }
+    };
+    element.addEventListener("wheel",handleWheel,{passive:false});
+    return ()=>element.removeEventListener("wheel",handleWheel);
+  },[bars.length,isZoomed]);
   if(!bars.length)return <div role="status" className="grid min-h-[280px] place-items-center rounded-xl border border-dashed border-white/15 p-5 text-sm text-slate-400">
     No market bars available for this interval. Try another time range.
   </div>;
@@ -53,22 +79,26 @@ function HistoryChart({payload,mode,showVolume}:{
     </div>;
   }
   const effectiveZoom=zoom??{start:0,end:bars.length-1};
-  const visible=bars.slice(effectiveZoom.start,effectiveZoom.end+1);
-  const focused=bars[hover??effectiveZoom.end]??visible.at(-1);
+  const firstIndex=Math.max(0,Math.ceil(effectiveZoom.start-1e-8));
+  const lastIndex=Math.min(bars.length-1,Math.floor(effectiveZoom.end+1e-8));
+  const visible=bars.slice(firstIndex,lastIndex+1);
+  const currentHover=hover!==null&&hover>=firstIndex&&hover<=lastIndex?hover:null;
+  const focused=bars[currentHover??lastIndex]??visible.at(-1);
   const low0=Math.min(...visible.map(b=>b.low));
   const high0=Math.max(...visible.map(b=>b.high));
   const padding=Math.max((high0-low0)*0.08,high0*.005,.001);
   const low=low0-padding, high=high0+padding;
   const volMax=Math.max(1,...visible.map(b=>b.volume));
-  const x=(i:number)=>L+usableW*(visible.length===1?.5:i/(visible.length-1));
-  const barWidth=Math.max(1,Math.min(12,usableW/Math.max(2,visible.length)*.65));
+  const x=(i:number)=>L+usableW*(firstIndex+i-effectiveZoom.start)/(effectiveZoom.end-effectiveZoom.start);
+  const barWidth=Math.max(1,Math.min(12,usableW/Math.max(2,effectiveZoom.end-effectiveZoom.start+1)*.65));
   const path=visible.map((bar,i)=>(i===0?"M":"L")+x(i).toFixed(2)+" "+pricePosition(bar.close,low,high).toFixed(2)).join(" ");
   const intraday=payload.interval==="5Min"||payload.interval==="15Min";
   function canvasX(e:ReactPointerEvent<SVGSVGElement>):number{
     const bounds=e.currentTarget.getBoundingClientRect();
     return (e.clientX-bounds.left)/bounds.width*W;
   }
-  const indexAt=(screenX:number)=>effectiveZoom.start+scrollToAbsolute(screenX,visible.length);
+  const indexAt=(screenX:number)=>
+    viewportBarIndex(effectiveZoom,bars.length,within((screenX-L)/usableW,0,1));
   function onPointerDown(e:ReactPointerEvent<SVGSVGElement>){
     if(e.button!==0)return;
     const x0=within(canvasX(e),L,W-R);
@@ -84,9 +114,8 @@ function HistoryChart({payload,mode,showVolume}:{
     if(state.type==="select")setDrag({x0:state.x0,x1:xp});
     else if(state.zoom0){
       const base=state.zoom0,span=base.end-base.start;
-      const offset=Math.round((state.x0-xp)/usableW*span);
-      const from=within(base.start+offset,0,bars.length-1-span);
-      setZoom({start:from,end:from+span});
+      const offset=(state.x0-xp)/usableW*span;
+      setZoom(panChartViewport(base,bars.length,offset));
     }
   }
   function onPointerUp(e:ReactPointerEvent<SVGSVGElement>){
@@ -96,7 +125,7 @@ function HistoryChart({payload,mode,showVolume}:{
       if(Math.abs(xp-state.x0)>=18 && visible.length>8){
         const from=within(indexAt(Math.min(xp,state.x0)),0,bars.length-1);
         const to=within(indexAt(Math.max(xp,state.x0)),from,bars.length-1);
-        if(to-from>=3)setZoom({start:from,end:to});
+        if(to-from>=4)setZoom({start:from,end:to});
       }
     }
     dragging.current=null;setDrag(null);
@@ -118,18 +147,18 @@ function HistoryChart({payload,mode,showVolume}:{
           onClick={()=>{setZoom(null);setHover(null);}}>Reset zoom</button>
         <button className={badge} type="button" disabled={!zoom} onClick={()=>{
           if(!zoom)return;
-          const span=zoom.end-zoom.start,from=within(zoom.start-Math.max(1,Math.floor(span/3)),0,bars.length-1-span);
-          setZoom({start:from,end:from+span});
+          const span=zoom.end-zoom.start;
+          setZoom(previous=>panChartViewport(previous,bars.length,-Math.max(1,span/3)));
         }}>←</button>
         <button className={badge} type="button" disabled={!zoom} onClick={()=>{
           if(!zoom)return;
-          const span=zoom.end-zoom.start,from=within(zoom.start+Math.max(1,Math.floor(span/3)),0,bars.length-1-span);
-          setZoom({start:from,end:from+span});
+          const span=zoom.end-zoom.start;
+          setZoom(previous=>panChartViewport(previous,bars.length,Math.max(1,span/3)));
         }}>→</button>
       </div>
     </div>
-    <svg viewBox={"0 0 "+W+" "+H} role="img"
-      aria-label={"Interactive "+payload.interval+" stock price and volume chart. Drag to zoom; shift-drag to pan. Use time range buttons or chart navigation arrows."}
+    <svg ref={chartRef} viewBox={"0 0 "+W+" "+H} role="img"
+      aria-label={"Interactive "+payload.interval+" stock price and volume chart. Mouse wheel or trackpad pinch zooms around your pointer. Drag to zoom; shift-drag to pan."}
       tabIndex={0} className="w-full touch-pan-y cursor-crosshair select-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#7ce0cc]"
       onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp}
       onPointerCancel={()=>{dragging.current=null;setDrag(null);}}
@@ -138,7 +167,7 @@ function HistoryChart({payload,mode,showVolume}:{
         if(e.key==="Escape"){setZoom(null);setHover(null);}
         if(e.key==="ArrowLeft"||e.key==="ArrowRight"){
           e.preventDefault();
-          const next=within((hover??effectiveZoom.end)+(e.key==="ArrowRight"?1:-1),effectiveZoom.start,effectiveZoom.end);
+          const next=within((currentHover??lastIndex)+(e.key==="ArrowRight"?1:-1),firstIndex,lastIndex);
           setHover(next);
         }
       }}>
@@ -174,8 +203,8 @@ function HistoryChart({payload,mode,showVolume}:{
           width={barWidth} height={Math.max(.5,bar.volume/volMax*(VOL_BOTTOM-VOL_TOP))}
           fill={bar.close>=bar.open?"#59bdac":"#d7899c"} opacity=".8"/>)}
       </>}
-      {focused&&hover!==null&&hover>=effectiveZoom.start&&hover<=effectiveZoom.end&&<>
-        <line x1={x(hover-effectiveZoom.start)} x2={x(hover-effectiveZoom.start)} y1={PRICE_TOP} y2={showVolume?VOL_BOTTOM:PRICE_BOTTOM}
+      {focused&&currentHover!==null&&<>
+        <line x1={x(currentHover-firstIndex)} x2={x(currentHover-firstIndex)} y1={PRICE_TOP} y2={showVolume?VOL_BOTTOM:PRICE_BOTTOM}
           stroke="#a3b6ca" strokeDasharray="4 4" strokeWidth="1.2"/>
         <line x1={L} x2={W-R} y1={pricePosition(focused.close,low,high)} y2={pricePosition(focused.close,low,high)}
           stroke="#a3b6ca" strokeDasharray="3 5" opacity=".5"/>
@@ -187,7 +216,7 @@ function HistoryChart({payload,mode,showVolume}:{
       <text x={W-R} y={H-17} fontSize="12" fill="#879db0" textAnchor="end">{timeLabel(visible.at(-1)!.time,intraday)}</text>
     </svg>
     <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
-      <span>{visible.length} bars in view · drag to zoom · Shift+drag to pan · arrows to browse · Esc to reset</span>
+      <span>{visible.length} bars in view · wheel / trackpad pinch to zoom · horizontal swipe to pan · drag to select · Esc to reset</span>
       <span>{zoom?"Zoomed interval":"Full selected period"}</span>
     </div>
   </div>;
@@ -242,14 +271,19 @@ export default function AdvancedStockChart({symbol}:{symbol:string}){
       </div>
     </div>
     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Choose price chart style">
-        {([["candles","Candles"],["line","Line"],["bars","OHLC Bars"]] as const).map(([value,label])=><button
-          key={value} className={button(mode===value)} aria-pressed={mode===value}
-          type="button" onClick={()=>setMode(value)}>{label}</button>)}
-      </div>
       <button type="button" aria-pressed={volume} onClick={()=>setVolume(v=>!v)} className={button(volume)}>
         Volume {volume?"On":"Off"}
       </button>
+      <label className="ml-auto flex items-center gap-2 text-xs font-semibold text-slate-400" htmlFor="research-chart-style">
+        Chart type
+        <select id="research-chart-style" value={mode}
+          onChange={event=>setMode(event.target.value as Mode)}
+          className="surface-field cursor-pointer rounded-lg border px-3 py-2 text-sm font-semibold">
+          <option value="candles">Candlesticks</option>
+          <option value="line">Line chart</option>
+          <option value="bars">OHLC bars</option>
+        </select>
+      </label>
     </div>
     <ChartForRange key={symbol+"-"+range} symbol={symbol} range={range} mode={mode} showVolume={volume}/>
   </div>;
