@@ -21,11 +21,14 @@ export default function ResearchWorkspace({section,t,navigate}:Props){
   const symbolsKey=watchlist.map(a=>a.symbol).join(",");
 
   useEffect(()=>{
-    try{
-      const stored=localStorage.getItem(STORAGE_KEY);
-      if(stored)setWatchlist(parseSavedResearchAssets(JSON.parse(stored) as unknown));
-    }catch{/* Browser storage might be disabled. */}
-    setLoaded(true);
+    const frame=requestAnimationFrame(()=>{
+      try{
+        const stored=localStorage.getItem(STORAGE_KEY);
+        if(stored)setWatchlist(parseSavedResearchAssets(JSON.parse(stored) as unknown));
+      }catch{/* Browser storage might be disabled. */}
+      setLoaded(true);
+    });
+    return ()=>cancelAnimationFrame(frame);
   },[]);
   useEffect(()=>{
     if(!loaded)return;
