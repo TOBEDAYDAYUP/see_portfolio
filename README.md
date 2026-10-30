@@ -101,6 +101,27 @@ types/
 - Four portfolio insights replace cash/buying-power/previous-equity cards: 12-month forecast (pending validated model), trailing 12-month Alpaca P/L (shows unavailable/partial history instead of inventing a year), projected dividends (zero for no positions; pending data otherwise), and summed unrealized P/L. Alpaca annual P/L may be affected by cash flows.
 - Holdings shows exactly one real Alpaca equity history chart in the original top-left layout, preserving the top-right risk/radar placeholder. The duplicate lower history chart and fictional holding/return cards are not shown.
 
+## Risk Engine v0.1 — Analysis
+
+The **Analysis** sidebar item now uses the connected Alpaca Paper positions (local development only):
+
+- Displays current long-US-equity allocation, top-holding concentration, Herfindahl–Hirschman Index (HHI), effective position count, annualized historical volatility and historical maximum drawdown.
+- Retrieves up to ~235 calendar days of split-adjusted daily **IEX** stock bars from Alpaca Market Data, using pagination. It requires at least 30 aligned daily returns for history-based metrics.
+- The historical risk model creates a **hypothetical buy-and-hold basket initialized with current invested stock weights**, not historical account holdings or realized returns. Cash, deposits/withdrawals, short positions, crypto, derivatives and FX are not modeled.
+- Empty accounts display `No open paper positions` with no invented risk scores. Positions outside the supported scope display an explicit unsupported message; missing market data leaves volatility/drawdown unavailable while retaining correct concentration figures.
+- No Python, database, or new npm dependency is required. Server API: `/api/alpaca/risk` (disabled in production until user authentication exists).
+
+### Validate the risk math
+
+```bash
+node --experimental-strip-types --test tests/risk-engine.test.mjs
+npx tsc --noEmit
+npm run lint
+npm run build
+```
+
+Unit tests cover single-stock concentration, multi-stock HHI, sample volatility, peak-to-trough drawdown and insufficient price data.
+
 ## Planned integrations (not implemented)
 
 1. Add user authentication and authorization before allowing remote account access.
