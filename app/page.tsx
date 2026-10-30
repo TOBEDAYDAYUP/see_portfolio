@@ -123,7 +123,7 @@ export default function Home() {
           <button onClick={()=>go("settings")} className={sidebarClass(page==="settings")} aria-current={page==="settings"?"page":undefined}><span className="w-5 text-lg">⚙</span>{t("Settings","设置")}</button>
         </div>
       </aside>
-      <main className="min-w-0 flex-1 px-5 pb-16 pt-7 sm:px-9 lg:px-12">
+      <main className="see-content min-w-0 flex-1 px-5 pb-16 pt-7 sm:px-9 lg:px-12">
         <nav className="mb-5 flex gap-2 overflow-x-auto md:hidden" aria-label="Mobile navigation">
           {[...portfolioLinks,{id:"brief" as const,label:"Daily Brief",zh:"每日简报",symbol:"▤"},{id:"settings" as const,label:"Settings",zh:"设置",symbol:"⚙"}].map(link=><button key={link.id} onClick={()=>go(link.id)} className={"shrink-0 rounded-full px-4 py-2 text-xs "+(page===link.id?"bg-[#7be2ca] font-bold text-[#102139]":"border border-white/10 text-slate-300")}>{t(link.label,link.zh)}</button>)}
         </nav>
