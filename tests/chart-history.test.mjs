@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { CHART_RANGES, planStockChart, parseStockChartBar, selectStockChartBars, marketDateNY } from "../lib/research/chart-utils.ts";
+import { CHART_RANGES, planStockChart, parseStockChartBar, selectStockChartBars, marketDateNY, assessChartCoverage } from "../lib/research/chart-utils.ts";
 
 const row=(time,open,high,low,close,volume)=>({t:time,o:open,h:high,l:low,c:close,v:volume});
 test("chart supports exactly 1D,5D,1M,1Y,ALL with real distinct granularity",()=>{
@@ -67,4 +67,26 @@ test("empty bars and sorting produce no fake prices",()=>{
     {time:"2026-10-29T10:00:00Z",open:4,high:5,low:3,close:3,volume:10},
   ];
   assert.equal(selectStockChartBars(rows,"1Y")[0].close,3);
+});
+
+test("single stale intraday IEX bar is insufficient to call a one-day chart complete",()=>{
+  const bars=[{time:"2026-10-27T19:00:00Z",open:2.28,high:2.28,low:2.28,close:2.28,volume:500}];
+  assert.equal(assessChartCoverage("1D",bars),"insufficient");
+  assert.equal(selectStockChartBars(bars,"1D").length,1);
+});
+
+test("limited intraday/monthly data is flagged without inventing volume or flat candles",()=>{
+  const bars=Array.from({length:23},(_,i)=>({
+    time:new Date(Date.UTC(2026,8,29+i,20)).toISOString(),
+    open:3.2,high:3.2,low:3.2,close:3.2,volume:i===5?500:0,
+  }));
+  assert.equal(assessChartCoverage("1D",bars),"sufficient");
+  assert.equal(assessChartCoverage("5D",bars),"limited");
+  assert.equal(assessChartCoverage("1M",bars),"sufficient");
+  assert.equal(assessChartCoverage("1Y",bars),"limited");
+  assert.equal(bars.filter(b=>b.volume===0).length,22);
+});
+
+test("no market bars are always insufficient, irrespective of selected range",()=>{
+  for(const range of CHART_RANGES)assert.equal(assessChartCoverage(range,[]),"insufficient");
 });
