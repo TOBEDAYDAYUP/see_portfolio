@@ -45,6 +45,8 @@ app/
       brief-settings.tsx              # Brief sentiment/company filters
       followed-companies-settings.tsx # Sample company watchlist
     portfolio-dashboard.tsx           # Alpaca paper portfolio coordinator
+    portfolio/portfolio-overview.tsx  # Original split chart/radar layout, real paper-equity series
+    portfolio/paper-equity-chart.tsx  # One actual daily paper equity chart
     settings/alpaca-connection.tsx     # Test connection + instructions
     portfolio/alpaca-portfolio.tsx     # Paper account, positions, equity history
     portfolio/
@@ -95,6 +97,7 @@ types/
 - Until user authentication/authorization exists, the API route is **disabled in production**. Do not deploy this personal account integration publicly.
 - The UI always labels paper data as simulated. Real paper account values display in USD; the demo-only CNY conversion is intentionally not applied to Alpaca balances.
 - Empty paper positions and API failures never silently fall back to fictional demo holdings.
+- Holdings shows exactly one real Alpaca equity history chart in the original top-left layout, preserving the top-right risk/radar placeholder. The duplicate lower history chart and fictional holding/return cards are not shown.
 
 ## Planned integrations (not implemented)
 
