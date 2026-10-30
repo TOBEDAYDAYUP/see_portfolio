@@ -23,6 +23,21 @@ async function readPaperPortfolio(signal?: AbortSignal): Promise<AlpacaPortfolio
     const result: unknown = await response.json();
     if (result && typeof result === "object" && "status" in result &&
         (result.status === "connected" || result.status === "not_configured" || result.status === "error")) {
+      if (result.status === "connected") {
+        // During a local hot reload, the old API may briefly omit annualPerformance.
+        // Keep the rest of the paper account visible instead of crashing the page.
+        const connected = result as Extract<AlpacaPortfolioResult, { status: "connected" }>;
+        return {
+          ...connected,
+          annualPerformance: connected.annualPerformance ?? {
+            available: false,
+            daysCovered: null,
+            completeYear: false,
+            profitLoss: null,
+            profitLossPct: null,
+          },
+        };
+      }
       return result as AlpacaPortfolioResult;
     }
     return { status: "error", code: "unavailable", message: "Unexpected response from local Alpaca API." };

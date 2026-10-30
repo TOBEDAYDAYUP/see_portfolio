@@ -2,7 +2,7 @@ import type { AnnualPaperPerformance, AlpacaPosition } from "../../../lib/alpaca
 
 type Props = {
   positions: AlpacaPosition[];
-  annualPerformance: AnnualPaperPerformance;
+  annualPerformance?: AnnualPaperPerformance | null;
 };
 const money = (value: number): string =>
   new Intl.NumberFormat("en-US", {
@@ -18,22 +18,25 @@ type Metric = {
   footnote: string;
   state: "pending" | "neutral" | "positive" | "negative";
 };
-function performanceMetric(annual: AnnualPaperPerformance): Metric {
-  if (!annual.available || annual.profitLoss === null) return {
+function performanceMetric(annual: AnnualPaperPerformance | null | undefined): Metric {
+  // Next.js development servers may temporarily serve an older API response
+  // without this newly added field. Missing or invalid data must not crash Holdings.
+  if (!annual || annual.available !== true ||
+      typeof annual.profitLoss !== "number" || !Number.isFinite(annual.profitLoss)) return {
     label: "Trailing 12M Account P/L", value: "—",
     detail: "Account history unavailable", footnote: "Awaiting Alpaca annual P/L data.",
     state: "pending",
   };
-  if (!annual.completeYear) return {
+  if (annual.completeYear !== true) return {
     label: "Trailing 12M Account P/L", value: "—",
-    detail: annual.daysCovered === null ? "Less than 12 months on record" : "Only " + annual.daysCovered + " days of history",
+    detail: typeof annual.daysCovered !== "number" || !Number.isFinite(annual.daysCovered) ? "Less than 12 months on record" : "Only " + annual.daysCovered + " days of history",
     footnote: "Available-period P/L: " + signedMoney(annual.profitLoss) + ". Not a full-year result.",
     state: "pending",
   };
   return {
     label: "Trailing 12M Account P/L",
     value: signedMoney(annual.profitLoss),
-    detail: annual.profitLossPct === null ? "Alpaca-reported P/L" : "Alpaca P/L: " + signedPercent(annual.profitLossPct * 100),
+    detail: typeof annual.profitLossPct !== "number" || !Number.isFinite(annual.profitLossPct) ? "Alpaca-reported P/L" : "Alpaca P/L: " + signedPercent(annual.profitLossPct * 100),
     footnote: "Based on Alpaca's historical P/L; deposits and withdrawals may affect reported performance.",
     state: annual.profitLoss > 0 ? "positive" : annual.profitLoss < 0 ? "negative" : "neutral",
   };
