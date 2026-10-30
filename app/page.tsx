@@ -73,16 +73,41 @@ export default function Home() {
   const title = page === "overview" ? "Your market, clearly." : page === "watchlist" ? "Your watchlist." : "Your daily brief.";
 
   return <div className="min-h-screen bg-[#0b1424] text-slate-100">
-    <div className="mx-auto flex min-h-screen max-w-[1600px]">
+    {/* Persistent, site-wide navigation: clicking the brand always returns home. */}
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-[#101b2d]/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between gap-4 px-5 sm:px-9">
+        <button
+          type="button"
+          aria-label="SEE Portfolio — return to Overview"
+          title="Back to Overview"
+          onClick={() => { setPage("overview"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          className="group flex shrink-0 items-center gap-3 rounded-xl text-left focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#83e3cd]"
+        >
+          <span className="grid h-10 w-10 place-items-center rounded-xl bg-[#7be2ca] text-xl font-black text-[#102139] transition group-hover:bg-[#a5f4e2]">S.</span>
+          <span className="flex flex-col">
+            <span className="text-base font-bold tracking-tight text-white transition group-hover:text-[#baf6e9]">SEE Portfolio</span>
+            <span className="hidden text-[10px] tracking-[.12em] text-slate-500 sm:block">INVESTMENT INTELLIGENCE</span>
+          </span>
+        </button>
+        <div className="hidden text-xs text-slate-400 lg:block">
+          Understand your investments. Without the noise.
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-emerald-200">DEMO MODE</span>
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-[#2c4058] text-xs font-bold" aria-label="Demo profile">SP</span>
+        </div>
+      </div>
+    </header>
+    <div className="mx-auto flex min-h-[calc(100vh-72px)] max-w-[1600px]">
       <aside className="hidden w-[242px] shrink-0 flex-col border-r border-white/10 bg-[#101b2d] px-5 py-8 md:flex">
-        <div className="mb-14 flex items-center gap-3"><div className="grid h-10 w-10 place-items-center rounded-xl bg-[#7be2ca] text-xl font-black text-[#102139]">S.</div><div><div className="font-bold tracking-tight">SEE Portfolio</div><div className="text-[9px] tracking-[.12em] text-slate-500">INVESTMENT INTELLIGENCE</div></div></div>
+        <div className="mb-8 border-b border-white/10 pb-5 text-sm font-medium text-slate-300">Research workspace</div>
         <div className="mb-4 px-3 text-[10px] font-semibold tracking-[.2em] text-slate-500">WORKSPACE</div>
         <nav className="space-y-1">{tabs.map(t => <button key={t.id} onClick={() => setPage(t.id)} className={"flex w-full items-center gap-3 rounded-xl px-4 py-3 text-left text-sm transition " + (page === t.id ? "bg-[#233b50] font-semibold text-[#9af0dc]" : "text-slate-400 hover:bg-white/5 hover:text-white")}><span className="w-5 text-lg">{t.symbol}</span>{t.label}</button>)}</nav>
         <div className="mt-auto rounded-2xl border border-emerald-300/10 bg-[#18333d] p-4"><div className="mb-2 text-sm font-semibold text-[#a4f1df]">◇ &nbsp; Private preview</div><p className="text-xs leading-5 text-slate-400">Your list is stored in this browser. No brokerage connection is needed.</p></div>
         <p className="mt-5 px-1 text-[11px] text-slate-600">SEE Portfolio · Prototype v0.1</p>
       </aside>
       <main className="min-w-0 flex-1 px-5 pb-16 pt-7 sm:px-9 lg:px-12">
-        <header className="mb-7 flex items-center justify-between gap-3"><div className="text-xs text-slate-400"><span className="mr-2 text-emerald-300">●</span>Personal research workspace</div><div className="flex items-center gap-3"><span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-emerald-200">DEMO MODE</span><div className="grid h-9 w-9 place-items-center rounded-full bg-[#2c4058] text-xs font-bold">SP</div></div></header>
+        <div className="mb-6 flex items-center gap-2 text-xs text-slate-400"><span className="text-emerald-300">●</span> Personal research workspace</div>
         <nav className="mb-5 flex gap-2 overflow-x-auto md:hidden">{tabs.map(t => <button key={t.id} onClick={() => setPage(t.id)} className={"shrink-0 rounded-full px-4 py-2 text-xs " + (page === t.id ? "bg-[#7be2ca] font-bold text-[#102139]" : "border border-white/10 text-slate-300")}>{t.label}</button>)}</nav>
         <div className="mb-7 rounded-xl border border-slate-500/30 bg-[#1c2a40] px-4 py-3 text-xs leading-5 text-slate-300"><strong className="text-[#a4f1df]">Prototype preview.</strong> All prices, charts, percentage changes and news are fictional placeholders. No live market data or AI system is connected yet.</div>
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4"><div><div className="mb-2 text-[11px] font-bold tracking-[.2em] text-[#85e6cf]">{page === "overview" ? "YOUR PERSONAL OVERVIEW" : page === "watchlist" ? "YOUR STOCKS" : "CURATED FOR YOU"}</div><h1 className="text-3xl font-semibold tracking-tight sm:text-[38px]">{title}</h1><p className="mt-2 text-sm text-slate-400">{page === "overview" ? "The signals that matter. None of the noise." : page === "watchlist" ? "Follow companies you care about, whether you own them or not." : "A focused digest, tailored to the stocks you follow."}</p></div><button onClick={() => {setPage("watchlist");setOpen(true);}} className="rounded-xl bg-[#83e3cd] px-4 py-3 text-sm font-bold text-[#112039] transition hover:bg-[#b5f4e5]">＋ Add stock</button></div>
