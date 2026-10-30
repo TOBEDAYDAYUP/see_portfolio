@@ -220,7 +220,7 @@ function HistoryChart({payload,mode,showVolume}:{
         width={Math.abs(drag.x1-drag.x0)} height={showVolume?VOL_BOTTOM-PRICE_TOP:PRICE_BOTTOM-PRICE_TOP}
         fill="#83e3cd" opacity=".16" stroke="#4cbfb3"/>}
       <text x={L} y={H-17} fontSize="12" fill="#879db0">{timeLabel(visible[0].time,intraday)}</text>
-      <text x={W-R} y={H-17} fontSize="12" fill="#879db0" textAnchor="end">{timeLabel(visible.at(-1)!.time,intraday)}</text>
+      <text x={W-R} y={H-17} fontSize="12" fill="#879db0" textAnchor="end">{timeLabel(density.buckets.at(-1)!.lastTime,intraday)}</text>
     </svg>
     <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
       <span>{visible.length} / {TARGET_VISIBLE_BARS} displayed candles · {density.rawCount} real source bars · scroll / pinch to zoom · drag to select</span>
