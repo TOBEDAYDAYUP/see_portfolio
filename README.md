@@ -49,6 +49,7 @@ app/
     portfolio/paper-equity-chart.tsx  # One actual daily paper equity chart
     settings/alpaca-connection.tsx     # Test connection + instructions
     portfolio/alpaca-portfolio.tsx     # Paper account, positions, equity history
+    portfolio/portfolio-research-metrics.tsx # 12M P/L, unrealized return, forecast placeholders
     portfolio/
       performance-chart.tsx           # Sample performance SVG
       portfolio-overview.tsx          # Chart and placeholder health card
@@ -92,11 +93,12 @@ types/
 **To change keys later**, edit only `.env.local` and restart the development server.
 
 - The paper host is fixed to `https://paper-api.alpaca.markets`. Live trading is not supported.
-- Only GET account, GET positions, and GET account portfolio history are sent.
+- Only GET account, GET positions, and GET account portfolio history are sent. The app reads 1M chart history and separately queries 1A account P/L history.
 - The browser receives only sanitized account data; keys are never returned in API responses.
 - Until user authentication/authorization exists, the API route is **disabled in production**. Do not deploy this personal account integration publicly.
 - The UI always labels paper data as simulated. Real paper account values display in USD; the demo-only CNY conversion is intentionally not applied to Alpaca balances.
 - Empty paper positions and API failures never silently fall back to fictional demo holdings.
+- Four portfolio insights replace cash/buying-power/previous-equity cards: 12-month forecast (pending validated model), trailing 12-month Alpaca P/L (shows unavailable/partial history instead of inventing a year), projected dividends (zero for no positions; pending data otherwise), and summed unrealized P/L. Alpaca annual P/L may be affected by cash flows.
 - Holdings shows exactly one real Alpaca equity history chart in the original top-left layout, preserving the top-right risk/radar placeholder. The duplicate lower history chart and fictional holding/return cards are not shown.
 
 ## Planned integrations (not implemented)
