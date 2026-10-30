@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { AlpacaPortfolioResult, AlpacaPosition, PortfolioHistoryPoint } from "../../../lib/alpaca/types";
-import type { Currency, Page } from "../../../types/app";
+import type { Currency } from "../../../types/app";
 
 type Props = { currency: Currency; onSettings: () => void };
 type Result = AlpacaPortfolioResult | null;
