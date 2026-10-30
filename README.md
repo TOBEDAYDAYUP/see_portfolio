@@ -55,15 +55,23 @@ GitHub Actions runs these checks automatically on pull requests and pushes.
 - Intraday warnings identify the last *actual available New York market date*, so an old bar (e.g. Oct 27 when viewing on Oct 30) is not presented as today's market session.
 - **Not changed:** Portfolio Holdings, portfolio risk methodology, Research VaR/ES and company news. Those continue to use the prior IEX-based calculation pipeline until separately reviewed.
 
+## Research Stock Report chart v0.3 — consistent 50-candle density
+
+- Every selected period (1D / 5D / 1M / 1Y / All) defaults to **50 evenly spaced visual OHLCV candles** when at least 50 genuine source bars are available. The physical chart width and visible candle count stay consistent across periods.
+- Existing raw OHLCV bars are combined into exactly 50 chronological groups: **open = first; high = highest; low = lowest; close = last; volume = sum**. No high, low or trading volume is dropped, and no synthetic underlying market bars are added.
+- **1M now requests actual 1-hour Alpaca market bars instead of ~21 daily bars**; this provides sufficient true inputs to make 50 display candles for liquid US equities. Other queries stay 1D=5Min, 5D=15Min, 1Y=1Day, All=1Week.
+- While zooming with a mouse wheel or trackpad, the display **re-aggregates the current raw-bar viewport**. Zooming reveals more temporal detail instead of merely enlarging the original 50 aggregated candles. All three modes (Candlesticks, Line chart, OHLC Bars) and summed volume use identical density.
+- If fewer than 50 real source bars exist (illiquid/new listing, data entitlement or narrow deep zoom), show the real count with a warning; never invent or interpolate market trades to force exactly 50. Hover details include the aggregated source-bar count and time interval. The backend remains read-only and uses delayed SIP with labeled IEX fallback.
+
 ## Research Stock Report chart v0.2 — OHLCV and interactive history
 
 In **Research → Stock Reports**, the previous fixed daily-close line is replaced with an interactive price/volume chart:
 
-- **1D:** most recent IEX session in 5-minute OHLCV bars; **5D:** last five IEX sessions in 15-minute bars.
-- **1M / 1Y:** daily OHLCV bars; **All:** weekly OHLCV bars requested since **2016-01-01** (up to available Alpaca coverage). Intraday ranges omit the latest 20 minutes; daily/weekly ranges omit the current potentially incomplete New York market date.
+- **1D:** most recent trading session in 5-minute OHLCV bars; **5D:** last five sessions in 15-minute bars.
+- **1M:** hourly OHLCV bars; **1Y:** daily OHLCV bars; **All:** weekly OHLCV bars requested since **2016-01-01** (up to available Alpaca coverage). Intraday ranges omit the latest 20 minutes; daily/weekly ranges omit the current potentially incomplete New York market date.
 - Modes: **Candles**, **Line**, **OHLC Bars**; separate **Volume On/Off** histogram.
 - Move the pointer to inspect timestamp, Open, High, Low, Close and IEX volume. Drag across the SVG to select/zoom a date interval; after zoom, **Shift+drag** or left/right arrow buttons to pan, **Reset zoom** to return. Keyboard Left/Right moves the crosshair and Escape resets zoom.
-- OHLC and **volume are actual historical Alpaca IEX exchange bars**, not simulated candles or consolidated US market volume. Bars are split-adjusted. Incomplete API pagination, invalid bars and no-data ranges never create fake data.
+- OHLCV comes from actual historical Alpaca SIP consolidated data when accessible, with labeled IEX-only fallback; the 50 visual buckets aggregate genuine provider bars. Bars are split-adjusted. Incomplete API pagination, invalid bars and no-data ranges never create fake data.
 - The chart uses a separate `GET /api/research/chart?symbol=AAPL&range=1M` API and the same existing local-only Alpaca Paper credentials. Company risk statistics and the original daily close in Stock Reports are **unchanged** and independently calculated from their existing history.
 - There are no new client chart dependencies or API accounts needed. Market-data permissions, exchange coverage and rate limits still apply.
 
