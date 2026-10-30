@@ -3,25 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ResearchSection, Translator } from "../../types/app";
 import type { ResearchArticle, ResearchAsset, ResearchResponse } from "../../lib/research/types";
-import { MAX_RESEARCH_WATCHLIST, symbolPattern } from "../../lib/research/types";
+import { MAX_RESEARCH_WATCHLIST } from "../../lib/research/types";
+import { parseSavedResearchAssets } from "../../lib/research/storage";
 import StockSearch from "./research/stock-search";
 import StockReportView from "./research/stock-report";
 import ResearchNewsFeed from "./research/news-feed";
 
 const STORAGE_KEY="see-research-watchlist-v1";
-function safeSavedAssets(input:unknown):ResearchAsset[]{
-  if(!Array.isArray(input))return [];
-  const seen=new Set<string>();
-  return input.flatMap((value):ResearchAsset[]=>{
-    if(!value||typeof value!=="object"||Array.isArray(value))return [];
-    const a=value as Record<string,unknown>;
-    const symbol=typeof a.symbol==="string"?a.symbol:"";
-    if(!symbolPattern.test(symbol)||seen.has(symbol))return [];
-    if(typeof a.name!=="string"||typeof a.exchange!=="string")return [];
-    seen.add(symbol);
-    return [{symbol,name:a.name.slice(0,160),exchange:a.exchange.slice(0,30),tradable:a.tradable===true}];
-  }).slice(0,MAX_RESEARCH_WATCHLIST);
-}
 type Props={section:ResearchSection;t:Translator;navigate:(next:ResearchSection)=>void};
 export default function ResearchWorkspace({section,t,navigate}:Props){
   const [watchlist,setWatchlist]=useState<ResearchAsset[]>([]);
@@ -35,7 +23,7 @@ export default function ResearchWorkspace({section,t,navigate}:Props){
   useEffect(()=>{
     try{
       const stored=localStorage.getItem(STORAGE_KEY);
-      if(stored)setWatchlist(safeSavedAssets(JSON.parse(stored) as unknown));
+      if(stored)setWatchlist(parseSavedResearchAssets(JSON.parse(stored) as unknown));
     }catch{/* Browser storage might be disabled. */}
     setLoaded(true);
   },[]);
