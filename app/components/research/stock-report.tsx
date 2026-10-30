@@ -2,35 +2,11 @@
 import { useEffect, useState } from "react";
 import type { ResearchAsset, ResearchResponse, StockReport } from "../../../lib/research/types";
 import ResearchNewsFeed from "./news-feed";
+import AdvancedStockChart from "./advanced-stock-chart";
 const money=(v:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2}).format(v);
 const pct=(v:number)=> (v>0?"+":"")+v.toFixed(2)+"%";
 const riskPct=(v:number|null)=>v===null?"—":v.toFixed(2)+"%";
 
-function PriceChart({series}:{series:StockReport["chart"]}){
-  if(series.length<2)return <div className="grid min-h-[170px] place-items-center text-sm text-slate-400">Daily close history is unavailable.</div>;
-  const W=760,H=240,l=60,r=18,t=20,b=36;
-  const closes=series.map(x=>x.close);
-  const low=Math.min(...closes),high=Math.max(...closes);
-  const pad=Math.max((high-low)*.08,high*.005);
-  const bottom=low-pad,top=high+pad;
-  const coord=series.map((p,i)=>{
-    const x=l+i/(series.length-1)*(W-l-r);
-    const y=t+(top-p.close)/(top-bottom)*(H-t-b);
-    return x.toFixed(1)+","+y.toFixed(1);
-  }).join(" ");
-  return <svg viewBox={"0 0 "+W+" "+H} className="w-full" role="img" aria-label="Last available historical IEX daily closing prices in USD">
-    {[0,.5,1].map(f=>{
-      const y=t+f*(H-t-b);
-      return <g key={f}>
-        <line x1={l} y1={y} x2={W-r} y2={y} stroke="#53677c" strokeDasharray="3 5" opacity=".45"/>
-        <text x={l-9} y={y+4} textAnchor="end" fontSize="11" fill="#93a4b8">{money(top-f*(top-bottom))}</text>
-      </g>;
-    })}
-    <polyline points={coord} fill="none" stroke="#7dd9c5" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
-    <text x={l} y={H-10} fontSize="11" fill="#93a4b8">{series[0].date}</text>
-    <text x={W-r} y={H-10} textAnchor="end" fontSize="11" fill="#93a4b8">{series[series.length-1].date}</text>
-  </svg>;
-}
 function RiskCard({label,value,description}:{label:string;value:string;description:string}){
   return <div className="rounded-xl border border-white/10 p-4">
     <p className="text-xs text-slate-400">{label}</p>
@@ -83,8 +59,7 @@ export default function StockReportView({symbol,asset:knownAsset,isFollowed,onFo
           </span>
           <span className="text-xs text-slate-500">Last available IEX daily close · {report.asOf}</span>
         </div>
-        <div className="mt-5"><PriceChart series={report.chart}/></div>
-        <p className="mt-2 text-[11px] leading-5 text-slate-500">Daily split-adjusted IEX closes · historical, not a live quote or consolidated US market price.</p>
+        <AdvancedStockChart symbol={report.asset.symbol}/>
       </div>}
     </section>
     {report&&<>
