@@ -106,6 +106,17 @@ export default function Home() {
     panel.style.setProperty("--glass-x", (e.clientX - bounds.left).toFixed(0) + "px");
     panel.style.setProperty("--glass-y", (e.clientY - bounds.top).toFixed(0) + "px");
   }}>
+    {/* Browser-native SVG displacement: only frosted surface pixels are refracted.
+        Text and SVG charts stay sharp; unsupported browsers retain regular glass. */}
+    <svg aria-hidden="true" focusable="false" width="0" height="0" style={{position:"absolute",overflow:"hidden",pointerEvents:"none"}}>
+      <defs>
+        <filter id="see-liquid-refraction" x="-15%" y="-15%" width="130%" height="130%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.014 0.021" numOctaves="2" seed="7" result="glassNoise"/>
+          <feGaussianBlur in="glassNoise" stdDeviation="1.1" result="softNoise"/>
+          <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="28" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+      </defs>
+    </svg>
     <header className="glass-topbar sticky top-0 z-40 border-b border-white/10 bg-[#101b2d]/95 backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-[1600px] items-center justify-between gap-4 px-5 sm:px-9">
         <button type="button" aria-label="SEE Portfolio home" onClick={()=>go("holdings")} className="group flex shrink-0 items-center gap-3 rounded-xl px-3 py-2 text-left transition-colors duration-150 hover:bg-[#303744] active:bg-[#394354] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#83e3cd]">
@@ -135,7 +146,7 @@ export default function Home() {
         {portfolioLinks.some(link=>link.id===page)&&<PortfolioDashboard section={page as PortfolioSection} currency={currency}/>}
         {page==="brief"&&<>
           <div className="mb-8 flex flex-wrap items-end justify-between gap-3"><div><p className="mb-2 text-[11px] font-semibold tracking-[.17em] text-[#8fe7d1]">DAILY BRIEF</p><h1 className="text-3xl font-semibold sm:text-[38px]">{t("Your Daily Brief","你的每日简报")}</h1><p className="mt-2 text-sm text-slate-400">{t("The most relevant sample events for the companies you follow.","与你关注的公司有关的演示事件摘要。")}</p></div><button onClick={()=>go("settings")} className="rounded-xl border border-white/15 bg-[#25364a] px-4 py-2.5 text-xs font-semibold text-emerald-100 hover:bg-[#344a60]">⚙ {t("Customize in Settings","前往设置调整")}</button></div>
-          <section className="mb-6 rounded-2xl border border-[#315857] bg-[linear-gradient(130deg,#193f42,#172338)] glass-feature p-6 sm:p-7"><span className="text-xs font-semibold tracking-[.15em] text-[#b0f2e2]">{t("PERSONALIZED · SAMPLE","个性化 · 演示")}</span><h2 className="mt-4 text-2xl font-semibold">{t("Less noise. More insight.","过滤噪音，聚焦重要信息。")}</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">{t("Your brief is filtered using the importance and company preferences in Settings. All stories are fictional examples.","这里依据设置中的重要性和公司偏好筛选新闻。所有新闻均为虚构示例。")}</p><div className="mt-5 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-white/10 px-3 py-1.5">{watchlist.length} {t("followed stocks","只关注股票")}</span><span className="rounded-full bg-white/10 px-3 py-1.5">{briefItems.length} {t("matching events","条符合条件的事件")}</span><span className="rounded-full bg-white/10 px-3 py-1.5">{t("Importance","重要性")} ≥ {minimumScore}</span></div></section>
+          <section className="mb-6 rounded-2xl border border-[#315857] bg-[linear-gradient(130deg,#193f42,#172338)] glass-feature glass-refract p-6 sm:p-7"><span className="text-xs font-semibold tracking-[.15em] text-[#b0f2e2]">{t("PERSONALIZED · SAMPLE","个性化 · 演示")}</span><h2 className="mt-4 text-2xl font-semibold">{t("Less noise. More insight.","过滤噪音，聚焦重要信息。")}</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">{t("Your brief is filtered using the importance and company preferences in Settings. All stories are fictional examples.","这里依据设置中的重要性和公司偏好筛选新闻。所有新闻均为虚构示例。")}</p><div className="mt-5 flex flex-wrap gap-2 text-xs"><span className="rounded-full bg-white/10 px-3 py-1.5">{watchlist.length} {t("followed stocks","只关注股票")}</span><span className="rounded-full bg-white/10 px-3 py-1.5">{briefItems.length} {t("matching events","条符合条件的事件")}</span><span className="rounded-full bg-white/10 px-3 py-1.5">{t("Importance","重要性")} ≥ {minimumScore}</span></div></section>
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">{t("Relevant updates","相关动态")}</h2><span aria-live="polite" className="text-xs text-slate-400">{t("Showing","显示")} {briefItems.length} / {related.length}</span></div>
           <div className="grid gap-4 lg:grid-cols-2">{briefItems.map(story=><article key={story.ticker} className="rounded-2xl border border-white/10 bg-[#172338] glass-panel p-5"><div className="mb-4 flex items-center gap-2 text-xs"><span className="rounded-md bg-[#283950] px-2.5 py-1 font-semibold">{story.ticker}</span><span className="text-slate-400">{story.category}</span><span className={"ml-auto rounded-full px-2.5 py-1 "+(story.tone==="Positive"?"bg-emerald-500/10 text-emerald-300":story.tone==="Negative"?"bg-rose-500/10 text-rose-300":"bg-amber-500/10 text-amber-300")}>{story.tone}</span></div><h3 className="mb-3 font-semibold">{story.title}</h3><p className="text-sm leading-6 text-slate-400">{story.detail}</p><div className="mt-5 flex justify-between border-t border-white/10 pt-4 text-[11px] text-slate-500"><span>{t("Fictional news example","虚构新闻示例")}</span><span>{t("Priority","优先级")} {story.score}/100</span></div></article>)}</div>
           {briefItems.length===0&&<div className="rounded-2xl border border-white/10 bg-[#172338] glass-panel p-7 text-sm text-slate-400">{t("No sample stories match these preferences. Adjust followed companies or the importance threshold in Settings.","当前设置下没有符合条件的演示新闻。请在设置中调整关注公司或重要性阈值。")}</div>}
@@ -143,7 +154,7 @@ export default function Home() {
         {page==="settings"&&<>
           <div className="mb-8"><p className="mb-2 text-[11px] font-semibold tracking-[.17em] text-[#8fe7d1]">PREFERENCES</p><h1 className="text-3xl font-semibold sm:text-[38px]">{t("Settings","设置")}</h1><p className="mt-2 text-sm text-slate-400">{t("Choose the information you receive and how you want to view it.","设置消息强度、通知、语言和金额显示方式。")}</p></div>
           <div className="grid gap-5 2xl:grid-cols-2">
-            <section className="glass-panel rounded-2xl border border-white/10 bg-[#172338] p-5 sm:p-6 2xl:col-span-2">
+            <section className="glass-panel glass-refract rounded-2xl border border-white/10 bg-[#172338] p-5 sm:p-6 2xl:col-span-2">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold">{t("Appearance","外观主题")}</h2>
