@@ -3,6 +3,7 @@ import { parseSECAnnualFinancials,freeCashFlow,ratioPercent,revenueGrowthPct } f
 import type { FundamentalSnapshot } from "./fundamentals-types";
 import { parseSECRecentData } from "./sec-ttm";
 import { loadFMPOutstandingShares } from "./fmp-shares";
+import { selectSECPrimaryFiling,parseSECInlineShares } from "./sec-inline-shares";
 
 const TIMEOUT_MS=18000;
 const CACHE_MS=60*60*1000;
@@ -32,6 +33,19 @@ async function getSEC(url:string):Promise<unknown>{
  if(res.status===404)return null;
  if(!res.ok)throw new Error("SEC EDGAR request failed ("+res.status+").");
  return res.json() as Promise<unknown>;
+}
+async function loadSECInlineOutstanding(cik:string,asOfDate:string){
+ try{
+  const submission=await getSEC("https://data.sec.gov/submissions/CIK"+cik+".json");
+  const filing=selectSECPrimaryFiling(submission,asOfDate,cik);
+  if(!filing)return null;
+  const response=await fetch(filing.url,{headers:headers(),cache:"no-store",
+    signal:AbortSignal.timeout(14000)});
+  if(!response.ok)return null;
+  const html=await response.text();
+  if(html.length>18000000)return null;
+  return parseSECInlineShares(html,asOfDate,filing.filed,filing.url);
+ }catch{return null;}
 }
 async function tickers():Promise<Ticker[]>{
  const now=Date.now();
@@ -81,12 +95,20 @@ export async function loadFundamentals(symbol:string,asOfDate=new Date().toISOSt
   const existing=recent.sharesOutstanding;
   const stale=!existing||(Date.parse(asOfDate)-Date.parse(existing.asOf))/86400000>220;
   if(stale){
-   const alternative=await loadFMPOutstandingShares(symbol,asOfDate);
-   if(alternative&&(Date.parse(asOfDate)-Date.parse(alternative.asOf))/86400000<=220){
-    recent.sharesOutstanding=alternative;
-    recent.notes.push("SEC common shares absent/stale; dated FMP total shares outstanding substituted (not float shares).");
-   }else if(!existing){
-    recent.notes.push("No SEC issuer share count; FMP supplemental total shares unavailable or not configured. Shares remain missing.");
+   // Source order: SEC companyfacts → SEC official filing Inline XBRL (aggregate
+   // class cover-page shares only if all class contexts share a date) → optional FMP.
+   const official=await loadSECInlineOutstanding(issuer.cik,asOfDate);
+   if(official&&(Date.parse(asOfDate)-Date.parse(official.asOf))/86400000<=220){
+    recent.sharesOutstanding=official;
+    recent.notes.push("SEC companyfacts shares unavailable; cover-page Inline XBRL safely reconciled share classes.");
+   }else{
+    const other=await loadFMPOutstandingShares(symbol,asOfDate);
+    if(other&&(Date.parse(asOfDate)-Date.parse(other.asOf))/86400000<=220){
+     recent.sharesOutstanding=other;
+     recent.notes.push("SEC shares missing/old; FMP total outstanding shares are used as a separate secondary source.");
+    }else if(!existing){
+     recent.notes.push("SEC companyfacts and Inline XBRL did not yield a verified total share count; FMP alternative is missing, restricted or unconfigured.");
+    }
    }
   }
   const notes=[
