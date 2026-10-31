@@ -190,7 +190,6 @@ function HistoryChart({payload,mode,showVolume}:{
         <line x1={L} x2={W-R} y1={pricePosition(focused.close,low,high)} y2={pricePosition(focused.close,low,high)}
           stroke="#a3b6ca" strokeDasharray="3 5" opacity=".5"/>
       </>}
-}
       <text x={L} y={H-17} fontSize="12" fill="#879db0">{timeLabel(visible[0].time,intraday)}</text>
       <text x={W-R} y={H-17} fontSize="12" fill="#879db0" textAnchor="end">{timeLabel(density.buckets.at(-1)!.lastTime,intraday)}</text>
     </svg>
