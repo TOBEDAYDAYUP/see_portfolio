@@ -36,6 +36,10 @@ function AnnualFundamentals({data}:{data:FundamentalSnapshot}){
      detail="USD · as reported on cash-flow statement"/>
    <Metric label="Free Cash Flow" value={compactUSD(data.freeCashFlowUsd)}
      detail="Operating cash flow − PP&E purchases; not available if either input is missing"/>
+  </div>
+  <details className="rounded-xl border border-white/10 p-4">
+   <summary className="cursor-pointer text-sm font-medium">More annual financial metrics</summary>
+   <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
    <Metric label="Operating Margin" value={percent(data.operatingMarginPct)}
      detail="Annual GAAP operating income / revenue"/>
    <Metric label="Total Assets" value={compactUSD(latest.metrics.totalAssets)}
@@ -44,8 +48,11 @@ function AnnualFundamentals({data}:{data:FundamentalSnapshot}){
      detail="USD · balance sheet at fiscal-year end"/>
    <Metric label="Cash & Equivalents" value={compactUSD(latest.metrics.cash)}
      detail="USD · latest annual statement cash tag"/>
-  </div>
-  <div className="overflow-x-auto rounded-xl border border-white/10">
+   </div>
+  </details>
+  <details className="rounded-xl border border-white/10 p-4">
+   <summary className="cursor-pointer text-sm font-medium">FY historical statements · last four fiscal years</summary>
+   <div className="mt-4 overflow-x-auto rounded-xl border border-white/10">
    <table className="w-full min-w-[630px] text-left text-xs">
     <thead className="bg-[#1c2a40] text-slate-300">
      <tr><th className="px-4 py-3">Fiscal year end</th>
@@ -67,20 +74,20 @@ function AnnualFundamentals({data}:{data:FundamentalSnapshot}){
    </table>
   </div>
   <p className="text-xs leading-6 text-slate-500">
-   Values shown in USD, abbreviated (B=billion, T=trillion). Fiscal-year 10-K US-GAAP data only,
+   Values shown in USD, abbreviated (B=billion, T=trillion). This section displays fiscal-year 10-K US-GAAP data only,
    not latest quarter, real-time fundamentals, forward estimates or valuation.
    Year-end calendar dates may differ from the company&apos;s fiscal-year labels.
    Some figures may be unavailable or restated. Source: SEC EDGAR.
   </p>
  </div>;
 }
-export default function FundamentalAnalysis({symbol,price,priceAsOf}:{symbol:string;price:number|null;priceAsOf:string}){
+export default function FundamentalAnalysis({symbol,price,priceAsOf,priceSource}:{symbol:string;price:number|null;priceAsOf:string;priceSource:string}){
  const [result,setResult]=useState<FundamentalsApiResponse|null>(null);
  useEffect(()=>{
   const controller=new AbortController();
   void (async()=>{
    try{
-    const response=await fetch("/api/research/fundamentals?symbol="+encodeURIComponent(symbol),
+    const response=await fetch("/api/research/fundamentals?symbol="+encodeURIComponent(symbol)+"&asOf="+encodeURIComponent(priceAsOf),
       {cache:"no-store",signal:controller.signal});
     const data=await response.json() as FundamentalsApiResponse;
     if(!controller.signal.aborted)setResult(data);
@@ -90,11 +97,11 @@ export default function FundamentalAnalysis({symbol,price,priceAsOf}:{symbol:str
    }
   })();
   return ()=>controller.abort();
- },[symbol]);
+ },[symbol,priceAsOf]);
  return <><section className="surface-panel rounded-2xl p-5 sm:p-7">
   <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
    <div><h2 className="text-lg font-semibold">Company Fundamentals</h2>
-    <p className="mt-1 text-xs text-slate-400">Financial statements · 10-K annual · SEC EDGAR</p></div>
+    <p className="mt-1 text-xs text-slate-400">Financial statements · 10-K annual + 10-Q TTM · SEC EDGAR</p></div>
    <span className="surface-pill rounded-full px-3 py-1.5 text-[11px] font-semibold">ACTUAL FILINGS · NOT FORECAST</span>
   </div>
   {!result&&<p role="status" className="text-sm text-slate-400">Checking official SEC financial reports…</p>}
@@ -109,6 +116,6 @@ export default function FundamentalAnalysis({symbol,price,priceAsOf}:{symbol:str
    </p>}
   </div>}
  </section>
- {result?.status==="ok"&&<ValuationAnalysis data={result.data} price={price} priceAsOf={priceAsOf}/>}
+ {result?.status==="ok"&&<ValuationAnalysis data={result.data} price={price} priceAsOf={priceAsOf} priceSource={priceSource}/>}
  </>;
 }
