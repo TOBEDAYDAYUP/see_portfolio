@@ -79,6 +79,7 @@ function AnnualFundamentals({data}:{data:FundamentalSnapshot}){
    Year-end calendar dates may differ from the company&apos;s fiscal-year labels.
    Some figures may be unavailable or restated. Source: SEC EDGAR.
   </p>
+  </details>
  </div>;
 }
 export default function FundamentalAnalysis({symbol,price,priceAsOf,priceSource}:{symbol:string;price:number|null;priceAsOf:string;priceSource:string}){
