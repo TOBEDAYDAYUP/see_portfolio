@@ -4,6 +4,38 @@ A lightweight investment research prototype built with **Next.js 16, React 19, T
 
 > **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
 
+## Research Valuation v0.2 — point-in-time SEC TTM + dated share counts
+
+Research → Stock Reports now shows **TTM P/E (approximate)**, TTM P/S, latest P/B,
+TTM free cash flow yield, FY P/E for comparison, and a dated market-cap **proxy**.
+TTM fields use the SEC 10-K last completed fiscal-year actual plus current fiscal
+10-Q year-to-date minus the corresponding prior-year 10-Q year-to-date amount.
+Quarterly and annual fiscal periods must align; 10-Q data must be filed no later than
+the reference stock-close date. An exact TTM bridge is required for every TTM field;
+missing or mismatched facts are withheld. TTM diluted EPS uses addition/subtraction
+of reported rounded diluted EPS and is **approximate**, not recomputed GAAP EPS.
+
+SEC `dei:EntityCommonStockSharesOutstanding` (fallback to
+`us-gaap:CommonStockSharesOutstanding`) supplies dated issuer common shares.
+Latest 10-Q/10-K `us-gaap:StockholdersEquity` supplies dated book equity.
+Both have distinct disclosed as-of dates, and are withheld if missing or stale.
+Price, multiples and market-cap proxy use **the same historical Alpaca IEX
+daily close**, not a real-time or consolidated quote. The independent interactive
+chart can use delayed consolidated SIP OHLCV and may show a different last bar.
+No claim is made of live market capitalization.
+
+News uses verified provider ticker tags, a direct-company versus sector distinction,
+HTML-entity decoding and cross-provider title deduplication. Secondary sector
+coverage is collapsed under its own heading. Annual historical tables, less important
+FY metrics and future-model placeholders are collapsed to prioritize current data.
+
+Existing Portfolio holdings, paper P/L, VaR/ES and brokerage permissions remain
+unchanged. Local-only API restrictions and existing SEC_USER_AGENT setup remain.
+No DCF, 12-month forecast, Forward P/E or EV/EBITDA is implemented. Model inputs
+and the local user's SEC and Alpaca connectivity still require end-to-end verification.
+
+### Previous annual-only approach (v0.1)
+
 ## Research Valuation Multiples v0.1 — annual, sourced, conservative
 
 Research → Stock Reports now displays **FY P/E (diluted)** from the most recent SEC 10-K diluted earnings-per-share fact and the latest available historical Alpaca IEX close. This is **not** a TTM P/E, Forward P/E, live quote or future price estimate.
