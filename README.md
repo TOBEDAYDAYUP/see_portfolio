@@ -4,6 +4,16 @@ A lightweight investment research prototype built with **Next.js 16, React 19, T
 
 > **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
 
+## Research Valuation Multiples v0.1 — annual, sourced, conservative
+
+Research → Stock Reports now displays **FY P/E (diluted)** from the most recent SEC 10-K diluted earnings-per-share fact and the latest available historical Alpaca IEX close. This is **not** a TTM P/E, Forward P/E, live quote or future price estimate.
+
+**FY P/S, FY P/B and FY FCF Yield** are explicitly marked **proxies**, using the most recent SEC fiscal-year *weighted-average diluted shares* as an estimate of current shares. The displayed estimated market cap is **not** a verified market capitalization. Share issuance/buybacks, splits, multiple classes and stale filings can distort these ratios; review the source dates and footnotes. P/E is suppressed for negative/zero EPS; P/B is suppressed for nonpositive book equity; missing inputs remain unavailable. Price data older than ten days, fiscal data older than 550 days, and class-share tickers using a dot or hyphen are gated rather than shown as misleading valuations.
+
+SEC annual EPS uses the official `USD/shares` unit, diluted shares use `shares`, and book equity uses the annual `USD` balance-sheet fact. All annual flow facts must meet the existing full-year 10-K filtering. Missing SEC_USER_AGENT leaves the feature disabled, without affecting Portfolio. No new credentials, packages or endpoints are introduced.
+
+**Still unavailable:** live market cap, verified TTM multiples, Forward P/E, EV/EBITDA, historical relative valuation, peer comparables, DCF and 12-month price targets. A FY valuation multiple is not an intrinsic value estimate.
+
 ## Company Fundamentals v0.1 — official SEC annual filings
 
 Research → Stock Reports now contains an independent Company Fundamentals panel. It reads **actual SEC EDGAR 10-K US-GAAP XBRL company facts** for supported US public issuers: annual revenue, net income, operating cash flow, reported capital spending, annual free cash flow (OCF minus capex), fiscal-year revenue growth, operating/net margins, assets, liabilities and cash. A year-end comparison table and the official SEC XBRL source URL are provided.
