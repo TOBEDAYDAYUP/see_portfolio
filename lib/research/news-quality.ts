@@ -39,7 +39,9 @@ function nearDuplicate(a:string,b:string){
  const x=tokens(a),y=tokens(b),set=new Set(x);
  const shared=y.filter(w=>set.has(w)).length;
  const union=new Set([...x,...y]).size;
- return (shared>=3&&union>0&&shared/union>=0.48)||
+ const generic=new Set(["startup","shares","stock","market","today","company","report","earnings","revenue","forecast"]);
+ const sharedTopic=x.slice(2).some(w=>!generic.has(w)&&y.slice(2).includes(w));
+ return (shared>=3&&union>0&&shared/union>=0.4&&sharedTopic)||
   (x.slice(0,5).join(" ")===y.slice(0,5).join(" ")&&x.length>=5);
 }
 /** Keep on-topic company items first and sector items distinctly labeled. */
