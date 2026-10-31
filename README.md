@@ -4,6 +4,16 @@ A lightweight investment research prototype built with **Next.js 16, React 19, T
 
 > **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
 
+## Research News timestamps
+
+Research → Recent Company News and Market & Sector News display the Alpaca
+`created_at` article timestamp to the **minute** in `America/Toronto` time
+(e.g. `Oct 30, 2026 · 2:35 PM EDT`), with DST-aware EST/EDT labels. These are
+provider article timestamps, **not independent verification of the originating
+publisher's first-publication time**. Missing or malformed offset-aware timestamps
+display `Time unavailable` instead of guessing. No extra market-data provider,
+permissions, or user timezone setting is required.
+
 ## Research Valuation v0.2 — point-in-time SEC TTM + dated share counts
 
 Research → Stock Reports now shows **TTM P/E (approximate)**, TTM P/S, latest P/B,
