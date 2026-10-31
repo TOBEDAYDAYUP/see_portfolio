@@ -78,6 +78,8 @@ test("old or future close, stale FY and class-shares suppress ratios",()=>{
  assert.equal(calculateFYValuation(f,null,"2026-10-28","2026-10-30").pe,null);
  const old=fixture();old.fiscalYears[0].fiscalYearEnd="2023-12-31";
  assert.equal(calculateFYValuation(old,100,"2026-10-28","2026-10-30").available,false);
+ const futureFiling=fixture();futureFiling.fiscalYears[0].filedAt="2026-10-29";
+ assert.equal(calculateFYValuation(futureFiling,100,"2026-10-28","2026-10-30").available,false);
  const classShares=fixture();classShares.symbol="BRK.B";
  assert.equal(calculateFYValuation(classShares,100,"2026-10-28","2026-10-30").pe,null);
 });
