@@ -92,3 +92,19 @@ test("stale close and class share tickers withhold every valuation ratio",()=>{
  assert.equal(v.ttmPEApprox,null);
  assert.equal(v.latestPBProxy,null);
 });
+
+test("SEC source coverage explains absent TTM data rather than silently showing blanks",()=>{
+ const raw=company({futureQ:true,shares:false});
+ const d=snapshot(raw);
+ assert.equal(d.recent.ttm,null);
+ assert.equal(d.recent.coverage.latest10QPeriodEnd,"2025-06-28");
+ assert.equal(d.recent.coverage.latestSECShareDate,null);
+ assert.equal(d.recent.coverage.latestSECBookDate,"2026-06-27");
+});
+test("SEC source coverage identifies the most recent public 10-Q and dated snapshots",()=>{
+ const d=snapshot(company());
+ assert.equal(d.recent.coverage.latest10QPeriodEnd,"2026-06-27");
+ assert.equal(d.recent.coverage.latestFiled10Q,"2026-07-31");
+ assert.equal(d.recent.coverage.latestSECShareDate,"2026-07-17");
+ assert.equal(d.recent.coverage.latestSECBookDate,"2026-06-27");
+});
