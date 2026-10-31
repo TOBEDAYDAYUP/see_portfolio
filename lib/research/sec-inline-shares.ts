@@ -36,7 +36,7 @@ export function parseSECInlineShares(html:string,asOfDate:string,filedAt:string,
  const last=all.map(x=>x.instant).sort().at(-1)!;
  const latest=all.filter(x=>x.instant===last);
  const noClass=latest.filter(x=>!x.member);
- const whole=noClass.length&&noClass.every(x=>x.value===noClass[0].value)?noClass[0].value:null;
+ const whole=noClass.length>0&&noClass.every(x=>x.value===noClass[0].value)?noClass[0].value:null;
  const grouped=new Map<string,number>();
  for(const x of latest.filter(x=>x.member)){
   if(grouped.has(x.member)&&grouped.get(x.member)!==x.value)return null;
@@ -64,7 +64,7 @@ export function selectSECPrimaryFiling(raw:unknown,asOfDate:string,cik:string){
   if(!["10-Q","10-K","10-Q/A","10-K/A"].includes(String(form))||
     typeof filed!=="string"||!date(filed)||filed>asOfDate||
     typeof accession!=="string"||!/^\d{10}-\d{2}-\d{6}$/.test(accession)||
-    typeof primary!=="string"||!^[a-zA-Z0-9._-]+\.html?$/.test(primary))continue;
+    typeof primary!=="string"||!/^[a-zA-Z0-9._-]+\.html?$/.test(primary))continue;
   return {filed,url:"https://www.sec.gov/Archives/edgar/data/"+Number(cik)+"/"+
    accession.replaceAll("-","")+"/"+primary};
  }
