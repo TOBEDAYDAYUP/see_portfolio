@@ -29,7 +29,7 @@ function titleMatches(headline:string,symbol:string,companyName:string):boolean{
  // such as any article mentioning a generic first company token.
  const search=h.join(" ");
  const phrase=issuer.join(" ");
- return search.includes(phrase);
+ return (" "+search+" ").includes(" "+phrase+" ");
 }
 const stopwords=new Set(["the","a","an","for","of","to","on","at","in","from","by","and","or","with","as","says","report"]);
 function tokens(headline:string){
