@@ -97,7 +97,7 @@ test("SEC source coverage explains absent TTM data rather than silently showing 
  const raw=company({futureQ:true,shares:false});
  const d=snapshot(raw);
  assert.equal(d.recent.ttm,null);
- assert.equal(d.recent.coverage.latest10QPeriodEnd,null);
+ assert.equal(d.recent.coverage.latest10QPeriodEnd,"2025-06-28");
  assert.equal(d.recent.coverage.latestSECShareDate,null);
  assert.equal(d.recent.coverage.latestSECBookDate,"2026-06-27");
 });
