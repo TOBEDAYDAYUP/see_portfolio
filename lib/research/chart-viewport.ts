@@ -74,7 +74,7 @@ export function classifyChartWheel(
   if(!Number.isFinite(deltaX)||!Number.isFinite(deltaY))return "page-scroll";
   if(ctrlKey&&deltaY!==0&&totalBars>MIN_ZOOM_BARS)return "pinch-zoom";
   // Prioritize natural page scroll for predominantly vertical/diagonal swipes.
-  if(hasZoom&&deltaX!==0&&Math.abs(deltaX)>Math.abs(deltaY)*1.2)
+  if(hasZoom&&totalBars>MIN_ZOOM_BARS&&deltaX!==0&&Math.abs(deltaX)>Math.abs(deltaY)*1.2)
     return "horizontal-pan";
   return "page-scroll";
 }
