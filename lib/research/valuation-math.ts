@@ -44,11 +44,14 @@ export function calculateFYValuation(
  const fyAge=todayDay!==null&&fyDay!==null?todayDay-fyDay:null;
  const freshPrice=positive(price)&&priceAge!==null&&priceAge>=0&&priceAge<=10;
  const freshFY=fyAge!==null&&fyAge>=0&&fyAge<=550;
+ const filedDay=dayNumber(latest?.filedAt??"");
+ const disclosedAtPrice=filedDay!==null&&priceDay!==null&&filedDay<=priceDay;
  const simpleShareClass=!/[.\-]/.test(data.symbol);
  if(!freshPrice)warnings.push("No usable recent IEX close (10 calendar-day freshness limit). Valuation ratios are withheld.");
  if(!freshFY)warnings.push("Latest SEC fiscal year is missing or older than 550 days. Valuation ratios are withheld.");
+ if(!disclosedAtPrice)warnings.push("SEC annual filing postdates the market close or has no verified filing date; prevent look-ahead valuation.");
  if(!simpleShareClass)warnings.push("Class-specific share pricing may not match issuer-level SEC EPS or share counts; multiples are withheld.");
- const available=freshPrice&&freshFY&&simpleShareClass;
+ const available=freshPrice&&freshFY&&disclosedAtPrice&&simpleShareClass;
  const cap=available&&positive(price)&&positive(shares)?price*shares:null;
  const marketCapProxyUSD=cap!==null&&Number.isFinite(cap)&&cap>0?cap:null;
  const revenue=m?.revenue??null;
