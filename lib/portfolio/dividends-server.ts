@@ -16,8 +16,15 @@ async function read(url:string):Promise<unknown>{
  if(!response.ok)throw new Error("Dividend data provider unavailable");
  return response.json() as Promise<unknown>;
 }
+const marketToday=()=>{
+ const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",
+  year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+ const part=(type:string)=>parts.find(x=>x.type===type)?.value??"";
+ return part("year")+"-"+part("month")+"-"+part("day");
+};
 const dateAdd=(days:number)=>{
- const d=new Date();d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);
+ const d=new Date(marketToday()+"T12:00:00Z");
+ d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);
 };
 async function corporateActions(symbols:string[]):Promise<{events:CashDividend[];complete:boolean}>{
  if(!symbols.length)return {events:[],complete:true};
@@ -66,7 +73,7 @@ export async function loadPortfolioDividends():Promise<PortfolioDividendsResult>
  const paid=activities.status==="fulfilled"?activities.value:{paid:[],complete:false};
  const events=corporate.status==="fulfilled"?corporate.value:{events:[],complete:false};
  const summary=summarizeDividends(portfolio.positions,events.events,paid.paid,paid.complete,
-  new Date().toISOString().slice(0,10));
+  marketToday());
  if(activities.status==="rejected")summary.warnings.push("Alpaca account DIV activity endpoint unavailable: received dividends are unknown, not zero.");
  if(corporate.status==="rejected")summary.warnings.push("Alpaca cash-dividend corporate actions unavailable: schedules and projections are unknown.");
  if(!events.complete)summary.warnings.push("Corporate action history pagination incomplete: annual run-rate unavailable when records may be missing.");
