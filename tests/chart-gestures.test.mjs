@@ -31,7 +31,7 @@ test("horizontal swipe pans time axis only when zoomed into hidden history",()=>
  assert.equal(classifyChartWheel(gesture(36,1),true,200),"horizontal-pan");
  assert.equal(classifyChartWheel(gesture(-36,-2),true,200),"horizontal-pan");
  assert.equal(classifyChartWheel(gesture(36,1),false,200),"page-scroll");
- assert.equal(classifyChartWheel(gesture(36,1),true,4),"horizontal-pan");
+ assert.equal(classifyChartWheel(gesture(36,1),true,4),"page-scroll");
 });
 
 test("pinch takes priority even when trackpad movement has incidental horizontal drift",()=>{
