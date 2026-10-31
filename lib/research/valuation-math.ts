@@ -49,14 +49,14 @@ export function calculateFYValuation(
  if(!freshFY)warnings.push("Latest SEC fiscal year is missing or older than 550 days. Valuation ratios are withheld.");
  if(!simpleShareClass)warnings.push("Class-specific share pricing may not match issuer-level SEC EPS or share counts; multiples are withheld.");
  const available=freshPrice&&freshFY&&simpleShareClass;
- const cap=available&&positive(shares)?price*shares:null;
+ const cap=available&&positive(price)&&positive(shares)?price*shares:null;
  const marketCapProxyUSD=cap!==null&&Number.isFinite(cap)&&cap>0?cap:null;
  const revenue=m?.revenue??null;
  const book=m?.stockholdersEquity??null;
  const ocf=m?.operatingCashFlow??null;
  const capex=m?.capitalExpenditure??null;
  const fcf=good(ocf)&&good(capex)&&capex>=0?ocf-capex:null;
- const pe=available&&positive(eps)?price/eps:null;
+ const pe=available&&positive(price)&&positive(eps)?price/eps:null;
  const ps=marketCapProxyUSD!==null&&positive(revenue)?marketCapProxyUSD/revenue:null;
  const pb=marketCapProxyUSD!==null&&positive(book)?marketCapProxyUSD/book:null;
  const yieldPct=marketCapProxyUSD!==null&&good(fcf)?100*fcf/marketCapProxyUSD:null;
