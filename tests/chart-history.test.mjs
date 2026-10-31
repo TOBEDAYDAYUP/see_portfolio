@@ -8,7 +8,7 @@ test("chart supports exactly 1D,5D,1M,1Y,ALL with real distinct granularity",()=
   const now=new Date("2026-10-30T23:00:00.000Z");
   assert.equal(planStockChart("1D",now).interval,"5Min");
   assert.equal(planStockChart("5D",now).interval,"15Min");
-  assert.equal(planStockChart("1M",now).interval,"1Hour");
+  assert.equal(planStockChart("1M",now).interval,"30Min");
   assert.equal(planStockChart("1Y",now).interval,"1Day");
   assert.equal(planStockChart("ALL",now).interval,"1Week");
   assert.equal(planStockChart("ALL",now).start,"2016-01-01");
@@ -22,10 +22,10 @@ test("intraday 1D/1M excludes 20 minutes while annual daily bars exclude today",
   const intraday=planStockChart("1D",now);
   assert.equal(intraday.end,"2026-10-30T19:40:00.000Z");
   assert.equal(intraday.intraday,true);
-  const hourly=planStockChart("1M",now);
-  assert.equal(hourly.interval,"1Hour");
-  assert.equal(hourly.intraday,true);
-  assert.equal(hourly.end,"2026-10-30T19:40:00.000Z");
+  const halfHourly=planStockChart("1M",now);
+  assert.equal(halfHourly.interval,"30Min");
+  assert.equal(halfHourly.intraday,true);
+  assert.equal(halfHourly.end,"2026-10-30T19:40:00.000Z");
   const annual=planStockChart("1Y",now);
   assert.equal(annual.end,"2026-10-29");
   assert.equal(annual.intraday,false);
