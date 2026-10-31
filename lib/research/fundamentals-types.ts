@@ -1,6 +1,7 @@
 /** Verified SEC annual US-GAAP filing measurements, not projections. */
 export type AnnualMetric="revenue"|"netIncome"|"operatingIncome"|"operatingCashFlow"|
- "capitalExpenditure"|"totalAssets"|"totalLiabilities"|"cash";
+ "capitalExpenditure"|"totalAssets"|"totalLiabilities"|"cash"|
+ "dilutedEps"|"dilutedWeightedShares"|"stockholdersEquity";
 export type AnnualFinancialRow={
   fiscalYear:number; fiscalYearEnd:string; filedAt:string;
   metrics:Record<AnnualMetric,number|null>;

@@ -83,11 +83,11 @@ export default function StockReportView({symbol,asset:knownAsset,isFollowed,onFo
           not forward-looking probability guarantees. No position value or portfolio P/L is assumed.
         </p>
       </section>
-      <FundamentalAnalysis key={report.asset.symbol} symbol={report.asset.symbol}/>
+      <FundamentalAnalysis key={report.asset.symbol} symbol={report.asset.symbol} price={report.latestClose} priceAsOf={report.asOf}/>
       <section className="grid gap-4 md:grid-cols-2">
-        <div className="surface-panel rounded-2xl p-5"><h3 className="font-semibold">12M Growth / Valuation</h3>
+        <div className="surface-panel rounded-2xl p-5"><h3 className="font-semibold">12M Growth Forecast</h3>
           <p className="mt-3 text-2xl font-semibold">—</p>
-          <p className="mt-2 text-xs leading-6 text-slate-400">SEC annual financials are shown above when available. A validated valuation and forecast model is still not built; no invented price target.</p>
+          <p className="mt-2 text-xs leading-6 text-slate-400">FY valuation multiples appear above when available. A forward-looking earnings forecast or validated future price target is not yet available.</p>
         </div>
         <div className="surface-panel rounded-2xl p-5"><h3 className="font-semibold">Expected Dividends</h3>
           <p className="mt-3 text-2xl font-semibold">—</p>

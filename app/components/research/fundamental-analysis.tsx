@@ -1,6 +1,7 @@
 "use client";
 import { useEffect,useState } from "react";
 import type { FundamentalSnapshot,FundamentalsApiResponse } from "../../../lib/research/fundamentals-types";
+import ValuationAnalysis from "./valuation-analysis";
 
 const compactUSD=(num:number|null)=>{
  if(num===null||!Number.isFinite(num))return "—";
@@ -73,7 +74,7 @@ function AnnualFundamentals({data}:{data:FundamentalSnapshot}){
   </p>
  </div>;
 }
-export default function FundamentalAnalysis({symbol}:{symbol:string}){
+export default function FundamentalAnalysis({symbol,price,priceAsOf}:{symbol:string;price:number|null;priceAsOf:string}){
  const [result,setResult]=useState<FundamentalsApiResponse|null>(null);
  useEffect(()=>{
   const controller=new AbortController();
@@ -90,7 +91,7 @@ export default function FundamentalAnalysis({symbol}:{symbol:string}){
   })();
   return ()=>controller.abort();
  },[symbol]);
- return <section className="surface-panel rounded-2xl p-5 sm:p-7">
+ return <><section className="surface-panel rounded-2xl p-5 sm:p-7">
   <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
    <div><h2 className="text-lg font-semibold">Company Fundamentals</h2>
     <p className="mt-1 text-xs text-slate-400">Financial statements · 10-K annual · SEC EDGAR</p></div>
@@ -107,5 +108,7 @@ export default function FundamentalAnalysis({symbol}:{symbol:string}){
     The rest of Research and your Portfolio will continue working without this optional integration.
    </p>}
   </div>}
- </section>;
+ </section>
+ {result?.status==="ok"&&<ValuationAnalysis data={result.data} price={price} priceAsOf={priceAsOf}/>}
+ </>;
 }
