@@ -19,6 +19,14 @@ export default function ValuationAnalysis({data,price,priceAsOf,priceSource}:{
  data:FundamentalSnapshot;price:number|null;priceAsOf:string;priceSource:string;
 }){
  const v=calculateCurrentValuation(data,price,priceAsOf,priceSource);
+ const coverageFields=[
+  ["TTM P/E",v.ttmPEApprox],["TTM P/S",v.ttmPSProxy],["Latest P/B",v.latestPBProxy],
+  ["TTM FCF Yield",v.ttmFCFYieldProxyPct],["FY P/E",v.fyPE],
+  ["TTM Revenue",v.ttmRevenue],["Reported Shares",v.sharesOutstanding],
+  ["Market-cap Proxy",v.marketCapProxyUSD],
+ ] as const;
+ const availableFields=coverageFields.filter(([,value])=>value!==null).length;
+ const missingFields=coverageFields.filter(([,value])=>value===null).map(([label])=>label);
  return <section aria-label="Company valuation" className="surface-panel rounded-2xl p-5 sm:p-7">
   <div className="flex flex-wrap items-start justify-between gap-3">
    <div>
@@ -33,6 +41,10 @@ export default function ValuationAnalysis({data,price,priceAsOf,priceSource}:{
    <span>Reference close: <strong className="font-medium text-slate-200">{usd(v.price)}</strong> · {priceAsOf} · {priceSource}</span>
    <span>TTM period ended: <strong className="font-medium text-slate-200">{v.ttmEnd??"Unavailable"}</strong></span>
   </div>
+  <p className="mt-3 text-xs text-slate-500">
+   Data coverage: <strong className="font-semibold text-slate-200">{availableFields}/8 available</strong>
+   {missingFields.length>0&&" · Missing: "+missingFields.join(", ")}
+  </p>
   <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
    <Card label="TTM P/E · Approx." value={multiple(v.ttmPEApprox)}
     explain="Reference price / (FY diluted EPS + latest interim YTD EPS − prior YTD EPS)."/>
