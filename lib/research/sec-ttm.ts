@@ -2,7 +2,7 @@ import type { AnnualFinancialRow } from "./fundamentals-types";
 import { METRIC_TAGS, type SECUnitEntry } from "./financial-math.ts";
 
 /** All computations use SEC facts filed on or before asOfDate. */
-export type SECPoint = {value:number;asOf:string;filedAt:string;tag:string};
+export type SECPoint = {value:number;asOf:string;filedAt:string;tag:string;source?:"SEC companyfacts"|"SEC filing inline XBRL"|"FMP shares-float";sourceUrl?:string};
 export type ResearchTTM = {
   periodEnd:string; filedAt:string; fiscalPeriod:"Q1"|"Q2"|"Q3";
   revenue:number|null; netIncome:number|null; operatingCashFlow:number|null;
@@ -51,7 +51,7 @@ function latestInstant(raw:unknown,taxonomy:string,tags:readonly string[],
   .sort((a,b)=>b.row.end!.localeCompare(a.row.end!)||
     b.row.filed!.localeCompare(a.row.filed!)||tags.indexOf(a.tag)-tags.indexOf(b.tag));
  const first=rows[0];
- return first?{value:first.row.val!,asOf:first.row.end!,filedAt:first.row.filed!,tag:first.tag}:null;
+ return first?{value:first.row.val!,asOf:first.row.end!,filedAt:first.row.filed!,tag:first.tag,source:"SEC companyfacts"}:null;
 }
 function ytdFact(raw:unknown,tags:readonly string[],unit:string,
   start:string,end:string,asOfDate:string):number|null{

@@ -6,6 +6,8 @@ import { labels } from "../../lib/demo/portfolio";
 import Soon from "./portfolio/section-placeholder";
 import AlpacaPortfolio from "./portfolio/alpaca-portfolio";
 import RiskAnalysis from "./portfolio/risk-analysis";
+import PortfolioValuation from "./portfolio/portfolio-valuation";
+import PortfolioDividends from "./portfolio/portfolio-dividends";
 
 export type { PortfolioSection } from "../../types/app";
 
@@ -23,10 +25,13 @@ export default function PortfolioDashboard({section,currency="USD",onSettings}:{
         <h1 className="text-3xl font-semibold sm:text-[38px]">My Portfolio</h1>
         {section!=="holdings"&&<p className="mt-2 text-sm text-slate-400">{section==="analysis"?"Risk analytics for your Alpaca Paper positions":labels[section]}</p>}
       </div>
-      <span className="surface-pill rounded-full px-3 py-2 text-xs">{section==="holdings"||section==="analysis"?"ALPACA · PAPER":"RESEARCH · PREVIEW"}</span>
+      <span className="surface-pill rounded-full px-3 py-2 text-xs">{["holdings","analysis","valuations","dividends"].includes(section)?"ALPACA · PAPER":"RESEARCH · PREVIEW"}</span>
     </div>
 
-    {section==="analysis" ? <RiskAnalysis onSettings={onSettings}/> : section!=="holdings" ? <Soon section={section}/> : <>
+    {section==="analysis" ? <RiskAnalysis onSettings={onSettings}/> :
+     section==="valuations"?<PortfolioValuation/>:
+     section==="dividends"?<PortfolioDividends/>:
+     section!=="holdings" ? <Soon section={section}/> : <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold">Holdings overview</h2>

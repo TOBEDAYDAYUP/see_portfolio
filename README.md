@@ -4,6 +4,42 @@ A lightweight investment research prototype built with **Next.js 16, React 19, T
 
 > **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
 
+## Portfolio Valuation & Dividends v1 · multi-source
+
+Portfolio → Valuation now reads **actual Alpaca Paper holdings**, applies the same
+SEC annual + 10-Q TTM computations and IEX daily price reference already used
+in Research, then computes a covered-positions P/E from **earnings yield** rather
+than an arithmetic P/E mean. Market-value-weighted FCF yield and explicit P/E/
+FCF coverage percentages prevent missing metrics from being treated as zero.
+Only long US listed stock positions are eligible (cash, ETFs, shorts, options
+and unsupported foreign filers are excluded). The source can process up to
+12 eligible tickers per request; extra positions are visibly marked unanalysed.
+
+When the SEC `companyfacts` standard total-shares field is absent, the engine
+tries **SEC original 10-Q/10-K Inline XBRL** and sums separate share classes
+*only if* the classes, counts and snapshot date can be reconciled. If this
+also fails, an optional `FMP_API_KEY` enables the FMP `stable/shares-float`
+**outstandingShares** fallback — never its free float. Provider date and
+source are preserved, and data newer than the quote or more than 220 days
+old are withheld. FMP endpoint coverage/pricing may vary with plan, and
+no third-party key is required for the SEC-only path. A 403/rate limit or
+failed provider never results in invented values.
+
+Portfolio → Dividends reads Alpaca Paper `/v2/account/activities/DIV` for
+previous cash **DIV credits** and market-data `/v1/corporate-actions` for
+known cash distributions. The upcoming amount is explicitly indicative
+(current qty × declared cash rate) and is NOT proof of entitlement.
+The annualized run-rate is shown only after 3 observed quarterly-spaced
+ordinary distributions, excluding specials; incomplete pagination
+suppresses run-rate forecasts. No missing dividend is assumed zero;
+the page discloses partial coverage and original data providers.
+
+Portfolio account APIs remain **local-development-only** until secure user
+authentication is implemented. No paper trades/orders are placed and no
+private API keys are serialized to clients. DCF and validated price targets
+remain out of scope. Local end-to-end credentials and any provider tier
+restrictions still need to be verified.
+
 ## Research News timestamps
 
 Research → Recent Company News and Market & Sector News display the Alpaca
