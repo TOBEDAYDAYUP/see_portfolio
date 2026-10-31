@@ -4,7 +4,7 @@ import { calculateFYValuation } from "../lib/research/valuation-math.ts";
 import { parseSECAnnualFinancials } from "../lib/research/financial-math.ts";
 
 const end="2025-12-31",start="2025-01-01";
-const annual=(val,unit,startDate=start)=>({val,start:startDate,end,form:"10-K",fp:"FY",
+const annual=(val,startDate=start)=>({val,start:startDate,end,form:"10-K",fp:"FY",
  filed:"2026-02-20",accn:"0000320193-26-000100"});
 const instant=(val)=>({val,end,form:"10-K",fp:"FY",filed:"2026-02-20",accn:"0000320193-26-000100"});
 const fixture=()=>({
@@ -32,7 +32,7 @@ test("SEC annual parser retains EPS and diluted shares with their respective uni
 test("partial quarter EPS and mismatched units do not contaminate FY ratios",()=>{
  const doc={facts:{"us-gaap":{
   Revenues:{units:{USD:[annual(1000)]}},
-  EarningsPerShareDiluted:{units:{"USD/shares":[annual(5),annual(0.2,"USD/shares","2025-10-01"),
+  EarningsPerShareDiluted:{units:{"USD/shares":[annual(5),annual(0.2,"2025-10-01"),
     {...annual(99),form:"10-Q"}],USD:[annual(900)]}},
   WeightedAverageNumberOfDilutedSharesOutstanding:{units:{shares:[annual(100)]}}
  }}};
