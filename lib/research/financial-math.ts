@@ -15,19 +15,24 @@ export const METRIC_TAGS:Record<AnnualMetric,readonly string[]>={
   totalAssets:["Assets"],
   totalLiabilities:["Liabilities"],
   cash:["CashAndCashEquivalentsAtCarryingValue","CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents"],
+  dilutedEps:["EarningsPerShareDiluted"],
+  dilutedWeightedShares:["WeightedAverageNumberOfDilutedSharesOutstanding"],
+  stockholdersEquity:["StockholdersEquity"],
 };
 const isRecord=(v:unknown):v is Fact=>typeof v==="object" && v!==null && !Array.isArray(v);
 const iso=(s:unknown):s is string=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s+"T00:00:00Z"));
 const elapsed=(a:string,b:string)=>(Date.parse(b+"T00:00:00Z")-Date.parse(a+"T00:00:00Z"))/86400000;
 const validForm=(v:unknown)=>v==="10-K"||v==="10-K/A";
-function factRows(doc:unknown,tags:readonly string[],flow:boolean):{tag:string;fact:SECUnitEntry}[]{
+const unitFor=(metric:AnnualMetric)=>metric==="dilutedEps"?"USD/shares":
+ metric==="dilutedWeightedShares"?"shares":"USD";
+function factRows(doc:unknown,tags:readonly string[],flow:boolean,unit:string):{tag:string;fact:SECUnitEntry}[]{
  if(!isRecord(doc)||!isRecord(doc.facts)||!isRecord(doc.facts["us-gaap"]))return [];
  const gaap=doc.facts["us-gaap"] as Fact;
  const output:{tag:string;fact:SECUnitEntry}[]=[];
  for(const tag of tags){
   const concept=gaap[tag];
-  if(!isRecord(concept)||!isRecord(concept.units)||!Array.isArray(concept.units.USD))continue;
-  for(const raw of concept.units.USD){
+  if(!isRecord(concept)||!isRecord(concept.units)||!Array.isArray(concept.units[unit]))continue;
+  for(const raw of concept.units[unit] as unknown[]){
    if(!isRecord(raw)||!iso(raw.end)||!iso(raw.filed)||!validForm(raw.form)||
       typeof raw.val!=="number"||!Number.isFinite(raw.val))continue;
    if(flow){
@@ -40,10 +45,10 @@ function factRows(doc:unknown,tags:readonly string[],flow:boolean):{tag:string;f
  }
  return output;
 }
-function pickAnnual(doc:unknown,tags:readonly string[],flow:boolean):Map<string,{
+function pickAnnual(doc:unknown,tags:readonly string[],flow:boolean,unit:string):Map<string,{
  value:number;filed:string;accn:string|null
 }>{
- const items=factRows(doc,tags,flow);
+ const items=factRows(doc,tags,flow,unit);
  const map=new Map<string,{value:number;filed:string;accn:string|null;priority:number}>();
  for(const {tag,fact} of items){
   const end=fact.end!;
@@ -81,16 +86,16 @@ function filingUrl(cik:string,accn:string|null):string|null{
 export function parseSECAnnualFinancials(doc:unknown,cik:string):AnnualFinancialRow[]{
  const lookup=Object.fromEntries(
   (Object.entries(METRIC_TAGS) as [AnnualMetric,readonly string[]][]).map(([metric,tags])=>
-   [metric,pickAnnual(doc,tags,!["totalAssets","totalLiabilities","cash"].includes(metric))])
+   [metric,pickAnnual(doc,tags,!["totalAssets","totalLiabilities","cash","stockholdersEquity"].includes(metric),unitFor(metric))])
  ) as Record<AnnualMetric,ReturnType<typeof pickAnnual>>;
  const ends=[...new Set([...lookup.revenue.keys(),...lookup.netIncome.keys(),
-   ...lookup.operatingCashFlow.keys()])].sort().reverse();
+   ...lookup.operatingCashFlow.keys(),...lookup.dilutedEps.keys()])].sort().reverse();
  return ends.slice(0,4).map(end=>{
   const metrics=Object.fromEntries(
    (Object.keys(METRIC_TAGS) as AnnualMetric[]).map(key=>[key,lookup[key].get(end)?.value??null])
   ) as Record<AnnualMetric,number|null>;
   const provenance=lookup.revenue.get(end)??lookup.netIncome.get(end)??
-   lookup.operatingCashFlow.get(end);
+   lookup.operatingCashFlow.get(end)??lookup.dilutedEps.get(end);
   const filed=provenance?.filed??end;
   return {
    fiscalYear:Number(end.slice(0,4)),fiscalYearEnd:end,filedAt:filed,metrics,
