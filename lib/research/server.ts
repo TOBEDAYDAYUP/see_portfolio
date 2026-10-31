@@ -5,6 +5,7 @@ import { MAX_RESEARCH_WATCHLIST, symbolPattern } from "./types";
 import { parseResearchAssetDirectory } from "./asset-parser";
 export { rankResearchMatches } from "./search-ranking";
 import type { ResearchAsset, ResearchArticle, StockReport } from "./types";
+import { curateResearchNews } from "./news-quality";
 
 const PAPER = "https://paper-api.alpaca.markets";
 const DATA = "https://data.alpaca.markets";
@@ -49,12 +50,12 @@ export function validateResearchSymbol(value:string):string|null {
   return symbolPattern.test(symbol)?symbol:null;
 }
 
-export async function loadResearchNews(symbols:string[],limit=12):Promise<ResearchArticle[]>{
+export async function loadResearchNews(symbols:string[],limit=12,companyNames:Record<string,string>={}):Promise<ResearchArticle[]>{
   if(!symbols.length)return [];
   if(symbols.length>MAX_RESEARCH_WATCHLIST ||
     symbols.some(s=>!symbolPattern.test(s))) throw new Error("Invalid requested news symbols.");
   const params=new URLSearchParams({
-    symbols:symbols.join(","),limit:String(Math.min(30,Math.max(1,limit))),
+    symbols:symbols.join(","),limit:"30",
     sort:"desc",exclude_contentless:"false",
   });
   // News defaults can be as short as today's articles; specify last 30 calendar days.
@@ -78,11 +79,19 @@ export async function loadResearchNews(symbols:string[],limit=12):Promise<Resear
       if(["https:","http:"].includes(parsed.protocol)) url=parsed.href;
     }catch{}
     const mentioned=Array.isArray(item.symbols)?item.symbols.filter((s):s is string=>typeof s==="string"):[];
-    articles.push({id,symbol:mentioned.find(s=>symbols.includes(s))||symbols[0],
+    const matched=mentioned.find(s=>symbols.includes(s));
+    if(!matched)continue;
+    articles.push({id,symbol:matched,
       headline,summary:str(item.summary).slice(0,500),source:source||"Unknown source",
       publishedAt,url});
   }
-  return articles;
+  const names={...companyNames};
+  if(Object.keys(names).length===0){
+    try{const assets=await loadActiveResearchAssets();
+      for(const a of assets)if(symbols.includes(a.symbol))names[a.symbol]=a.name;
+    }catch{/* Keep ticker-based classification when asset names are unavailable. */}
+  }
+  return curateResearchNews(articles,names,limit);
 }
 
 export async function loadResearchReport(symbol:string):Promise<StockReport|null>{
@@ -90,7 +99,7 @@ export async function loadResearchReport(symbol:string):Promise<StockReport|null
   const asset=assets.find(a=>a.symbol===symbol);
   if(!asset)return null;
   const [historical,headlines]=await Promise.allSettled([
-    loadDailyStockCloses([symbol]),loadResearchNews([symbol],10),
+    loadDailyStockCloses([symbol]),loadResearchNews([symbol],10,{[symbol]:asset.name}),
   ]);
   const warnings:string[]=[];
   const prices=historical.status==="fulfilled"?historical.value[symbol]??[]:[];
@@ -115,7 +124,7 @@ export async function loadResearchReport(symbol:string):Promise<StockReport|null
   const latest=series.at(-1)?.close??null, previous=series.at(-2)?.close??null;
   return {
     asset,asOf:series.at(-1)?.date??new Date().toISOString().slice(0,10),
-    closeCurrency:"USD",latestClose:latest,previousClose:previous,
+    closeCurrency:"USD",priceSource:"Alpaca IEX",latestClose:latest,previousClose:previous,
     changePct:latest!==null&&previous!==null&&previous>0?(latest/previous-1)*100:null,
     chart:series.slice(-130),risk,
     news:headlines.status==="fulfilled"?headlines.value:[],

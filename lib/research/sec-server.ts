@@ -1,6 +1,7 @@
 import "server-only";
 import { parseSECAnnualFinancials,freeCashFlow,ratioPercent,revenueGrowthPct } from "./financial-math";
 import type { FundamentalSnapshot } from "./fundamentals-types";
+import { parseSECRecentData } from "./sec-ttm";
 
 const TIMEOUT_MS=18000;
 const CACHE_MS=60*60*1000;
@@ -53,12 +54,13 @@ async function tickers():Promise<Ticker[]>{
  })();
  try{return await tickerPending;}finally{tickerPending=null;}
 }
-export async function loadFundamentals(symbol:string):Promise<FundamentalSnapshot|null>{
+export async function loadFundamentals(symbol:string,asOfDate=new Date().toISOString().slice(0,10)):Promise<FundamentalSnapshot|null>{
  if(!/^[A-Z0-9][A-Z0-9.\-]{0,15}$/.test(symbol))return null;
  if(!hasSECContact())throw new Error("SEC_USER_AGENT is not configured.");
- const cached=snapshots.get(symbol);
+ const key=symbol+"|"+asOfDate;
+ const cached=snapshots.get(key);
  if(cached&&cached.until>Date.now())return cached.value;
- const concurrent=pending.get(symbol);
+ const concurrent=pending.get(key);
  if(concurrent)return concurrent;
  const work=(async()=>{
   const directory=await tickers();
@@ -69,30 +71,31 @@ export async function loadFundamentals(symbol:string):Promise<FundamentalSnapsho
   if(!issuer)return null;
   const dataUrl="https://data.sec.gov/api/xbrl/companyfacts/CIK"+issuer.cik+".json";
   const raw=await getSEC(dataUrl);
-  const rows=parseSECAnnualFinancials(raw,issuer.cik);
+  const rows=parseSECAnnualFinancials(raw,issuer.cik,asOfDate);
   if(!rows.length)return null;
   const latest=rows[0],m=latest.metrics;
+  const recent=parseSECRecentData(raw,rows,asOfDate);
   const notes=[
    "US-GAAP 10-K annual fiscal-year data; no quarterly/YTD figures or analyst estimates.",
    "Missing SEC tags are left unavailable rather than estimated.",
    "Individual fields may come from different filed 10-K versions; use filing links for verification.",
   ];
   const result:FundamentalSnapshot={
-   symbol,cik:issuer.cik,companyName:issuer.name,currency:"USD",
+   symbol,cik:issuer.cik,companyName:issuer.name,currency:"USD",asOfDate,
    source:"SEC EDGAR · annual US GAAP 10-K",
    fiscalYears:rows,
    revenueYoYPct:revenueGrowthPct(rows),
    netMarginPct:ratioPercent(m.netIncome,m.revenue),
    operatingMarginPct:ratioPercent(m.operatingIncome,m.revenue),
    freeCashFlowUsd:freeCashFlow(m.operatingCashFlow,m.capitalExpenditure),
-   latestFilingDate:latest.filedAt,dataUrl,notes,
+   latestFilingDate:latest.filedAt,dataUrl,notes,recent,
   };
   return result;
  })();
- pending.set(symbol,work);
+ pending.set(key,work);
  try{
   const value=await work;
-  snapshots.set(symbol,{until:Date.now()+CACHE_MS,value});
+  snapshots.set(key,{until:Date.now()+CACHE_MS,value});
   return value;
- }finally{pending.delete(symbol);}
+ }finally{pending.delete(key);}
 }

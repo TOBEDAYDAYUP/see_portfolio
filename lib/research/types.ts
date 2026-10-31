@@ -12,6 +12,7 @@ export type ResearchArticle = {
   summary: string;
   source: string;
   publishedAt: string;
+  category?: "company"|"sector";
   url: string | null;
 };
 export type ResearchClose = { date: string; close: number };
@@ -26,6 +27,7 @@ export type StockReport = {
   asset: ResearchAsset;
   asOf: string;
   closeCurrency: "USD";
+  priceSource: "Alpaca IEX";
   latestClose: number | null;
   previousClose: number | null;
   changePct: number | null;
