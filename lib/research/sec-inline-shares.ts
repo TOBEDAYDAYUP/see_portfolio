@@ -38,7 +38,8 @@ export function parseSECInlineShares(html:string,asOfDate:string,filedAt:string,
  const noClass=latest.filter(x=>!x.member);
  const whole=noClass.length>0&&noClass.every(x=>x.value===noClass[0].value)?noClass[0].value:null;
  const grouped=new Map<string,number>();
- for(const x of latest.filter(x=>x.member)){
+ for(const x of latest){
+  if(x.member===null||x.member==="")continue;
   if(grouped.has(x.member)&&grouped.get(x.member)!==x.value)return null;
   grouped.set(x.member,x.value);
  }
