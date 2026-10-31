@@ -27,6 +27,7 @@ export type StockReport = {
   asset: ResearchAsset;
   asOf: string;
   closeCurrency: "USD";
+  priceSource: "Alpaca IEX";
   latestClose: number | null;
   previousClose: number | null;
   changePct: number | null;
