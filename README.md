@@ -55,11 +55,19 @@ GitHub Actions runs these checks automatically on pull requests and pushes.
 - Intraday warnings identify the last *actual available New York market date*, so an old bar (e.g. Oct 27 when viewing on Oct 30) is not presented as today's market session.
 - **Not changed:** Portfolio Holdings, portfolio risk methodology, Research VaR/ES and company news. Those continue to use the prior IEX-based calculation pipeline until separately reviewed.
 
+## Research Stock Report trading session correction
+
+- **1D, 5D and 1M** now exclude U.S. equities **pre-market (before 09:30 ET)** and **after-hours (at or after the regular market close)** before grouping their raw price bars into 50 OHLCV candles.
+- The server retrieves Alpaca Paper Trading's official **GET /v2/calendar** for actual session open/close per trading date, including holidays and **13:00 early-close** sessions. An explicit warning appears if the calendar endpoint fails, in which case only the default 09:30–16:00 ET time filter is applied.
+- Times use `America/New_York`, handling EDT/EST automatically. Market-session filtering runs **before** the latest-1-day or latest-5-day selection, so pre-market data from a new day does not hide yesterday's completed session.
+- **1M 30-minute bars** replace hourly bars to prevent 09:00–10:00 buckets mixing pre-market and post-open trades. Trading-session OHLCV and volume are sourced from genuine Alpaca SIP (IEX fallback) market bars; no out-of-session volume is added to regular-session buckets.
+- **1Y and All** still use original provider **daily/weekly aggregate bars** for performance and broad history; those native provider aggregates are *not* reconstructed from regular-session-only intraday data and may contain after-hours contributions. The UI explicitly discloses this limitation.
+
 ## Research Stock Report chart v0.3 — consistent 50-candle density
 
 - Every selected period (1D / 5D / 1M / 1Y / All) defaults to **50 evenly spaced visual OHLCV candles** when at least 50 genuine source bars are available. The physical chart width and visible candle count stay consistent across periods.
 - Existing raw OHLCV bars are combined into exactly 50 chronological groups: **open = first; high = highest; low = lowest; close = last; volume = sum**. No high, low or trading volume is dropped, and no synthetic underlying market bars are added.
-- **1M now requests actual 1-hour Alpaca market bars instead of ~21 daily bars**; this provides sufficient true inputs to make 50 display candles for liquid US equities. Other queries stay 1D=5Min, 5D=15Min, 1Y=1Day, All=1Week.
+- **1M now requests real 30-minute Alpaca bars** so each source bar aligns with 09:30–16:00 ET. The default 50 visual candles are rebuilt only from qualifying regular-session bars. Other ranges: 1D=5Min, 5D=15Min, 1Y=1Day, All=1Week.
 - While zooming with a mouse wheel or trackpad, the display **re-aggregates the current raw-bar viewport**. Zooming reveals more temporal detail instead of merely enlarging the original 50 aggregated candles. All three modes (Candlesticks, Line chart, OHLC Bars) and summed volume use identical density.
 - If fewer than 50 real source bars exist (illiquid/new listing, data entitlement or narrow deep zoom), show the real count with a warning; never invent or interpolate market trades to force exactly 50. Hover details include the aggregated source-bar count and time interval. The backend remains read-only and uses delayed SIP with labeled IEX fallback.
 
@@ -68,7 +76,7 @@ GitHub Actions runs these checks automatically on pull requests and pushes.
 In **Research → Stock Reports**, the previous fixed daily-close line is replaced with an interactive price/volume chart:
 
 - **1D:** most recent trading session in 5-minute OHLCV bars; **5D:** last five sessions in 15-minute bars.
-- **1M:** hourly OHLCV bars; **1Y:** daily OHLCV bars; **All:** weekly OHLCV bars requested since **2016-01-01** (up to available Alpaca coverage). Intraday ranges omit the latest 20 minutes; daily/weekly ranges omit the current potentially incomplete New York market date.
+- **1M:** 30-minute OHLCV bars; **1Y:** provider daily bars; **All:** provider weekly bars requested since **2016-01-01** (up to available Alpaca coverage). Intraday ranges omit the latest 20 minutes; daily/weekly ranges omit the current potentially incomplete New York market date.
 - Modes: **Candles**, **Line**, **OHLC Bars**; separate **Volume On/Off** histogram.
 - Move the pointer to inspect timestamp, Open, High, Low, Close and IEX volume. Drag across the SVG to select/zoom a date interval; after zoom, **Shift+drag** or left/right arrow buttons to pan, **Reset zoom** to return. Keyboard Left/Right moves the crosshair and Escape resets zoom.
 - OHLCV comes from actual historical Alpaca SIP consolidated data when accessible, with labeled IEX-only fallback; the 50 visual buckets aggregate genuine provider bars. Bars are split-adjusted. Incomplete API pagination, invalid bars and no-data ranges never create fake data.

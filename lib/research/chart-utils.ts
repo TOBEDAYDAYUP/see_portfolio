@@ -8,7 +8,7 @@ export type ChartBar={
 export type ChartPayload={
   symbol:string;
   range:ChartRange;
-  interval:"5Min"|"15Min"|"1Hour"|"1Day"|"1Week";
+  interval:"5Min"|"15Min"|"30Min"|"1Day"|"1Week";
   source:"Alpaca SIP"|"Alpaca IEX";
   quality:"sufficient"|"limited"|"insufficient";
   notice:string|null;
@@ -49,7 +49,7 @@ export function planStockChart(range:ChartRange,now=new Date()):ChartRequest{
   switch(range){
     case "1D":return {range,interval:"5Min",start:isoDaysBefore(safeNow,8),end:safeNow.toISOString(),intraday:true};
     case "5D":return {range,interval:"15Min",start:isoDaysBefore(safeNow,16),end:safeNow.toISOString(),intraday:true};
-    case "1M":return {range,interval:"1Hour",start:isoDaysBefore(safeNow,30),end:safeNow.toISOString(),intraday:true};
+    case "1M":return {range,interval:"30Min",start:isoDaysBefore(safeNow,30),end:safeNow.toISOString(),intraday:true};
     case "1Y":return {range,interval:"1Day",start:tradingCalendarStart(endDate,365),end:endDate,intraday:false};
     case "ALL":return {range,interval:"1Week",start:"2016-01-01",end:endDate,intraday:false};
   }

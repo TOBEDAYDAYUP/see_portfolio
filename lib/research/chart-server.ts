@@ -1,6 +1,8 @@
 import "server-only";
 import { planStockChart, parseStockChartBar, selectStockChartBars, assessChartCoverage, marketDateNY } from "./chart-utils";
-import type { ChartPayload, ChartRange, ChartBar } from "./chart-utils";
+import type { ChartPayload, ChartRange, ChartBar, ChartRequest } from "./chart-utils";
+import { parseAlpacaTradingCalendar, selectRegularTradingBars } from "./chart-session";
+import type { TradingSession } from "./chart-session";
 
 const HOST="https://data.alpaca.markets/v2/stocks";
 const MAX_PAGES=6;
@@ -39,7 +41,23 @@ async function fetchBars(symbol:string,range:ChartRange,feed:Feed,
     if(!next){complete=true;break;}
   }
   if(!complete)throw new Error("Incomplete paginated OHLCV history; refusing partial chart.");
-  return selectStockChartBars(gathered,range);
+  return gathered;
+}
+const CALENDAR="https://paper-api.alpaca.markets/v2/calendar";
+async function fetchRegularCalendar(
+  plan:ChartRequest,
+  credentials:{"APCA-API-KEY-ID":string;"APCA-API-SECRET-KEY":string;Accept:string},
+):Promise<Map<string,TradingSession>>{
+  const params=new URLSearchParams({
+    start:plan.start.slice(0,10),
+    end:plan.end.slice(0,10),
+  });
+  const response=await fetch(CALENDAR+"?"+params.toString(),{
+    method:"GET",headers:credentials,cache:"no-store",
+    signal:AbortSignal.timeout(TIMEOUT_MS),
+  });
+  if(!response.ok)throw new Error("Alpaca exchange calendar unavailable.");
+  return parseAlpacaTradingCalendar(await response.json() as unknown);
 }
 /**
  * Delayed SIP historical quotes (end >=20 minutes old) are available to Alpaca
@@ -62,6 +80,20 @@ export async function loadStockChart(symbol:string,range:ChartRange):Promise<Cha
     notice="SIP historical access was denied; displaying IEX-only volume and prices instead.";
     bars=await fetchBars(symbol,range,"iex",auth);
   }
+  const plan=planStockChart(range);
+  if(plan.intraday){
+    let calendar:Map<string,TradingSession>|null=null;
+    try{
+      calendar=await fetchRegularCalendar(plan,auth);
+    }catch{
+      notice=(notice?notice+" ":"")+"Exchange calendar unavailable: using standard "+
+        "9:30 AM–4:00 PM ET session limits; early-closing holidays may not be fully accounted for.";
+    }
+    bars=selectRegularTradingBars(bars,range,calendar);
+  }
+  // Pick the latest FULL regular session(s) after filtering, not the
+  // latest after-hours-only trading date.
+  bars=selectStockChartBars(bars,range);
   const quality=assessChartCoverage(range,bars);
   const latest=bars.at(-1)?.time;
   if(quality!=="sufficient"){
@@ -81,7 +113,6 @@ export async function loadStockChart(symbol:string,range:ChartRange):Promise<Cha
         " (New York); not today's session.";
     }
   }
-  const plan=planStockChart(range);
   return {
     symbol,range,interval:plan.interval,
     source:feed==="sip"?"Alpaca SIP":"Alpaca IEX",
