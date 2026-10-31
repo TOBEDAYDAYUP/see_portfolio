@@ -12,6 +12,7 @@ export type ResearchArticle = {
   summary: string;
   source: string;
   publishedAt: string;
+  category?: "company"|"sector";
   url: string | null;
 };
 export type ResearchClose = { date: string; close: number };
