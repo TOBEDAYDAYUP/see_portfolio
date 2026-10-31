@@ -50,7 +50,7 @@ export default function ValuationAnalysis({data,price,priceAsOf,priceSource}:{
     explain="10-K + 10-Q year-to-date − prior-year matching year-to-date."/>
    <Card label="Reported shares (dated)" value={v.sharesOutstanding===null?"—":
      new Intl.NumberFormat("en-US",{notation:"compact",maximumFractionDigits:3}).format(v.sharesOutstanding)}
-    explain={"SEC outstanding common shares · as of "+(v.sharesDate??"—")}/>
+    explain={(v.sharesSource??"Outstanding shares unavailable")+" · dated "+(v.sharesDate??"—")}/>
    <Card label="Market-cap proxy" value={compact(v.marketCapProxyUSD)}
     explain="Dated SEC share count × IEX daily close. Not official or real-time market cap."/>
   </div>
