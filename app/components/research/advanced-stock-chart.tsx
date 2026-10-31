@@ -85,7 +85,6 @@ function HistoryChart({payload,mode,showVolume}:{
       </p>
     </div>;
   }
-  const effectiveZoom=zoom??{start:0,end:bars.length-1};
   // Re-aggregate raw history to the same 50-candle density on every zoom.
   const density=bucketVisibleChartBars(bars,zoom);
   const visible=density.buckets.map(bucket=>bucket.bar);
