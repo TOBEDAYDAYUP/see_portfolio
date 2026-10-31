@@ -47,3 +47,34 @@ export function viewportBarIndex(
   const position=range.start+clamp(pointerFraction,0,1)*(range.end-range.start);
   return clamp(Math.round(position),Math.ceil(range.start-1e-8),Math.floor(range.end+1e-8));
 }
+
+/**
+ * Distinguish macOS trackpad gestures from ordinary browser scrolling.
+ *
+ * Chromium marks a trackpad pinch as ctrlKey + wheel deltaY. A normal
+ * two-finger vertical swipe also emits wheel deltaY, but WITHOUT ctrlKey:
+ * never intercept that gesture, so the whole web page can scroll.
+ *
+ * Horizontal two-finger swipes pan the time axis only after the user has
+ * zoomed into a subset of available data. At full range there is nothing
+ * offscreen to pan, so leave browser scrolling/navigation untouched.
+ */
+export type ChartWheelIntent = "pinch-zoom" | "horizontal-pan" | "page-scroll";
+export type ChartWheelInput = {
+  ctrlKey:boolean;
+  deltaX:number;
+  deltaY:number;
+};
+export function classifyChartWheel(
+  gesture:ChartWheelInput,
+  hasZoom:boolean,
+  totalBars:number,
+):ChartWheelIntent {
+  const {ctrlKey,deltaX,deltaY}=gesture;
+  if(!Number.isFinite(deltaX)||!Number.isFinite(deltaY))return "page-scroll";
+  if(ctrlKey&&deltaY!==0&&totalBars>MIN_ZOOM_BARS)return "pinch-zoom";
+  // Prioritize natural page scroll for predominantly vertical/diagonal swipes.
+  if(hasZoom&&totalBars>MIN_ZOOM_BARS&&deltaX!==0&&Math.abs(deltaX)>Math.abs(deltaY)*1.2)
+    return "horizontal-pan";
+  return "page-scroll";
+}
