@@ -94,7 +94,7 @@ function HistoryChart({payload,mode,showVolume}:{
   const x=(i:number)=>L+usableW*(i+.5)/visible.length;
   const barWidth=Math.max(1,Math.min(12,usableW/visible.length*.72));
   const path=visible.map((bar,i)=>(i===0?"M":"L")+x(i).toFixed(2)+" "+pricePosition(bar.close,low,high).toFixed(2)).join(" ");
-  const intraday=payload.interval==="5Min"||payload.interval==="15Min"||payload.interval==="1Hour";
+  const intraday=payload.interval==="5Min"||payload.interval==="15Min"||payload.interval==="30Min";
   const focusedDates=focusedGroup
     ? timeLabel(focusedGroup.firstTime,intraday)+
       (focusedGroup.firstTime===focusedGroup.lastTime?"":" – "+timeLabel(focusedGroup.lastTime,intraday))
@@ -256,7 +256,7 @@ function ChartForRange({symbol,range,mode,showVolume}:{
     <HistoryChart key={symbol+"-"+range} payload={result.data} mode={mode} showVolume={showVolume}/>
     <p className="mt-3 text-[11px] leading-5 text-slate-500">
       {result.data.interval} OHLCV · split-adjusted · {result.data.source==="Alpaca SIP"?"SIP consolidated US trades & volume (delayed).":"IEX exchange-only trades & volume; not the consolidated US market."}
-      {result.data.delayedMinutes>0?" Latest 20 minutes excluded; not real time.":" Daily/weekly bars omit today's potentially unfinished session."}
+      {result.data.delayedMinutes>0?" Regular session only (9:30 AM–4:00 PM ET, adjusted for early closes); pre-market and after-hours excluded. Latest 20 minutes excluded; not real time.":" Provider daily/weekly OHLCV may contain extended-hours trades; not yet reconstructed as regular-session-only. Today's potentially unfinished session omitted."}
       {result.data.asOf?" Last bar: "+timeLabel(result.data.asOf,result.data.interval.endsWith("Min")||result.data.interval.endsWith("Hour"))+" ET.":""}
       {range==="ALL"?" All available weekly history requested since 2016.":""}
     </p>
@@ -273,7 +273,7 @@ export default function AdvancedStockChart({symbol}:{symbol:string}){
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-5">
       <div>
         <h3 className="text-base font-semibold">Price &amp; Trading Volume</h3>
-        <p className="mt-1 text-xs text-slate-400">Historical OHLCV · consolidated data when available</p>
+        <p className="mt-1 text-xs text-slate-400">Historical OHLCV · consolidated when available · regular hours for 1D / 5D / 1M</p>
       </div>
       <div className="flex flex-wrap gap-1.5" role="group" aria-label="Select chart period">
         {CHART_RANGES.map(v=><button key={v} type="button" className={button(range===v)}
