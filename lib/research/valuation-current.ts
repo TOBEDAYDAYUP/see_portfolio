@@ -9,7 +9,7 @@ export type CurrentValuation={
   marketCapProxyUSD:number|null;
   ttmEnd:string|null;ttmRevenue:number|null;ttmNetIncome:number|null;
   ttmFCF:number|null;ttmEPSApprox:number|null;
-  sharesOutstanding:number|null;sharesDate:string|null;
+  sharesOutstanding:number|null;sharesDate:string|null;sharesSource:string|null;
   bookEquity:number|null;bookDate:string|null;
   warnings:string[];hasCurrentInputs:boolean;
 };
@@ -75,6 +75,7 @@ export function calculateCurrentValuation(data:FundamentalSnapshot,
   ttmEnd:ttmOK?ttm.periodEnd:null,ttmRevenue,ttmNetIncome,ttmFCF,ttmEPSApprox,
   sharesOutstanding:sharesOK?sharesPoint.value:null,
   sharesDate:sharesOK?sharesPoint.asOf:null,
+  sharesSource:sharesOK?(sharesPoint.source??"SEC companyfacts"):null,
   bookEquity,bookDate:equityOK?equityPoint.asOf:null,
   warnings,hasCurrentInputs:enabled,
  };
