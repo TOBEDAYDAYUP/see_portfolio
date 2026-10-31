@@ -1,3 +1,4 @@
+import type { RecentSECData } from "./sec-ttm";
 /** Verified SEC annual US-GAAP filing measurements, not projections. */
 export type AnnualMetric="revenue"|"netIncome"|"operatingIncome"|"operatingCashFlow"|
  "capitalExpenditure"|"totalAssets"|"totalLiabilities"|"cash"|
@@ -8,12 +9,13 @@ export type AnnualFinancialRow={
   filingUrl:string|null;
 };
 export type FundamentalSnapshot={
-  symbol:string;cik:string; companyName:string;
+  symbol:string;cik:string; companyName:string; asOfDate:string;
   currency:"USD"; source:"SEC EDGAR · annual US GAAP 10-K";
   fiscalYears:AnnualFinancialRow[];
   revenueYoYPct:number|null; netMarginPct:number|null;
   operatingMarginPct:number|null; freeCashFlowUsd:number|null;
   latestFilingDate:string|null; dataUrl:string;
+  recent:RecentSECData;
   notes:string[];
 };
 export type FundamentalsApiResponse=
