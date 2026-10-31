@@ -2,7 +2,7 @@ import type { AnnualFinancialRow } from "./fundamentals-types";
 import { METRIC_TAGS, type SECUnitEntry } from "./financial-math.ts";
 
 /** All computations use SEC facts filed on or before asOfDate. */
-export type SECPoint = {value:number;asOf:string;filedAt:string;tag:string;source?:"SEC companyfacts"|"FMP shares-float";sourceUrl?:string};
+export type SECPoint = {value:number;asOf:string;filedAt:string;tag:string;source?:"SEC companyfacts"|"SEC filing inline XBRL"|"FMP shares-float";sourceUrl?:string};
 export type ResearchTTM = {
   periodEnd:string; filedAt:string; fiscalPeriod:"Q1"|"Q2"|"Q3";
   revenue:number|null; netIncome:number|null; operatingCashFlow:number|null;
