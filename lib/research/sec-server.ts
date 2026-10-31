@@ -2,6 +2,7 @@ import "server-only";
 import { parseSECAnnualFinancials,freeCashFlow,ratioPercent,revenueGrowthPct } from "./financial-math";
 import type { FundamentalSnapshot } from "./fundamentals-types";
 import { parseSECRecentData } from "./sec-ttm";
+import { loadFMPOutstandingShares } from "./fmp-shares";
 
 const TIMEOUT_MS=18000;
 const CACHE_MS=60*60*1000;
@@ -75,6 +76,19 @@ export async function loadFundamentals(symbol:string,asOfDate=new Date().toISOSt
   if(!rows.length)return null;
   const latest=rows[0],m=latest.metrics;
   const recent=parseSECRecentData(raw,rows,asOfDate);
+  // SEC companyfacts sometimes omit issuer-level shares for multi-class issuers.
+  // Only fill a missing/stale number from the optional FMP outstanding-shares endpoint.
+  const existing=recent.sharesOutstanding;
+  const stale=!existing||(Date.parse(asOfDate)-Date.parse(existing.asOf))/86400000>220;
+  if(stale){
+   const alternative=await loadFMPOutstandingShares(symbol,asOfDate);
+   if(alternative&&(Date.parse(asOfDate)-Date.parse(alternative.asOf))/86400000<=220){
+    recent.sharesOutstanding=alternative;
+    recent.notes.push("SEC common shares absent/stale; dated FMP total shares outstanding substituted (not float shares).");
+   }else if(!existing){
+    recent.notes.push("No SEC issuer share count; FMP supplemental total shares unavailable or not configured. Shares remain missing.");
+   }
+  }
   const notes=[
    "US-GAAP 10-K annual fiscal-year data; no quarterly/YTD figures or analyst estimates.",
    "Missing SEC tags are left unavailable rather than estimated.",
