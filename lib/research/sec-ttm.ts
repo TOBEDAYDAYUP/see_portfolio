@@ -15,6 +15,7 @@ export type RecentSECData = {
   bookEquity:SECPoint|null;
   assets:SECPoint|null;
   liabilities:SECPoint|null;
+  coverage:{latestFiled10Q:string|null;latest10QPeriodEnd:string|null;latestSECShareDate:string|null;latestSECBookDate:string|null};
   notes:string[];
 };
 type Obj=Record<string,unknown>;
@@ -119,8 +120,15 @@ export function parseSECRecentData(raw:unknown,annual:AnnualFinancialRow[],
  const shares=latestInstant(raw,"dei",["EntityCommonStockSharesOutstanding"],
   "shares",asOfDate)??latestInstant(raw,"us-gaap",["CommonStockSharesOutstanding"],"shares",asOfDate);
  const book=latestInstant(raw,"us-gaap",["StockholdersEquity"],"USD",asOfDate);
+ const quarterly=[...facts(raw,"us-gaap",METRIC_TAGS.revenue,"USD",asOfDate,false),
+  ...facts(raw,"us-gaap",METRIC_TAGS.netIncome,"USD",asOfDate,false)]
+  .filter(({row})=>row.form==="10-Q"||row.form==="10-Q/A")
+  .sort((a,b)=>b.row.end!.localeCompare(a.row.end!)||b.row.filed!.localeCompare(a.row.filed!));
+ const latest10Q=quarterly[0]?.row;
  return {
   ttm,sharesOutstanding:shares,bookEquity:book,
+  coverage:{latestFiled10Q:latest10Q?.filed??null,latest10QPeriodEnd:latest10Q?.end??null,
+   latestSECShareDate:shares?.asOf??null,latestSECBookDate:book?.asOf??null},
   assets:latestInstant(raw,"us-gaap",["Assets"],"USD",asOfDate),
   liabilities:latestInstant(raw,"us-gaap",["Liabilities"],"USD",asOfDate),
   notes:[
