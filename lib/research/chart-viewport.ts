@@ -49,17 +49,27 @@ export function viewportBarIndex(
 }
 
 /**
- * Distinguish macOS trackpad gestures from ordinary browser scrolling.
- *
- * Chromium marks a trackpad pinch as ctrlKey + wheel deltaY. A normal
- * two-finger vertical swipe also emits wheel deltaY, but WITHOUT ctrlKey:
- * never intercept that gesture, so the whole web page can scroll.
- *
- * Horizontal two-finger swipes pan the time axis only after the user has
- * zoomed into a subset of available data. At full range there is nothing
- * offscreen to pan, so leave browser scrolling/navigation untouched.
+ * Mouse/trackpad click-and-hold drag: pulling the chart to the RIGHT reveals
+ * EARLIER history; pulling LEFT reveals later bars. Distances use the actual
+ * plot-area width (not its surrounding labels) for consistent sensitivity.
  */
-export type ChartWheelIntent = "pinch-zoom" | "horizontal-pan" | "page-scroll";
+export function dragChartViewport(
+  current:ChartViewport|null,totalBars:number,
+  pointerDeltaX:number,plotWidthPx:number,
+):ChartViewport|null {
+  if(!current||!Number.isFinite(pointerDeltaX)||!Number.isFinite(plotWidthPx)||
+     plotWidthPx<=0||pointerDeltaX===0)return current;
+  const span=current.end-current.start;
+  return panChartViewport(current,totalBars,-pointerDeltaX/plotWidthPx*span);
+}
+
+/**
+ * On Chrome/macOS two-finger VERTICAL swipes are ordinary wheel events;
+ * pinch-to-zoom uniquely signals ctrlKey + wheel deltaY. Never intercept
+ * horizontal or vertical scrolling to pan: timeline panning is via held
+ * pointer drag, while the page retains natural trackpad scrolling.
+ */
+export type ChartWheelIntent = "pinch-zoom" | "page-scroll";
 export type ChartWheelInput = {
   ctrlKey:boolean;
   deltaX:number;
@@ -67,14 +77,10 @@ export type ChartWheelInput = {
 };
 export function classifyChartWheel(
   gesture:ChartWheelInput,
-  hasZoom:boolean,
   totalBars:number,
 ):ChartWheelIntent {
   const {ctrlKey,deltaX,deltaY}=gesture;
   if(!Number.isFinite(deltaX)||!Number.isFinite(deltaY))return "page-scroll";
-  if(ctrlKey&&deltaY!==0&&totalBars>MIN_ZOOM_BARS)return "pinch-zoom";
-  // Prioritize natural page scroll for predominantly vertical/diagonal swipes.
-  if(hasZoom&&totalBars>MIN_ZOOM_BARS&&deltaX!==0&&Math.abs(deltaX)>Math.abs(deltaY)*1.2)
-    return "horizontal-pan";
-  return "page-scroll";
+  return ctrlKey&&deltaY!==0&&totalBars>MIN_ZOOM_BARS
+    ? "pinch-zoom" : "page-scroll";
 }
