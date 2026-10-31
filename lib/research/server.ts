@@ -124,7 +124,7 @@ export async function loadResearchReport(symbol:string):Promise<StockReport|null
   const latest=series.at(-1)?.close??null, previous=series.at(-2)?.close??null;
   return {
     asset,asOf:series.at(-1)?.date??new Date().toISOString().slice(0,10),
-    closeCurrency:"USD",latestClose:latest,previousClose:previous,
+    closeCurrency:"USD",priceSource:"Alpaca IEX",latestClose:latest,previousClose:previous,
     changePct:latest!==null&&previous!==null&&previous>0?(latest/previous-1)*100:null,
     chart:series.slice(-130),risk,
     news:headlines.status==="fulfilled"?headlines.value:[],
