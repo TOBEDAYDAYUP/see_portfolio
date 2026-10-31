@@ -25,7 +25,7 @@ const elapsed=(a:string,b:string)=>(Date.parse(b+"T00:00:00Z")-Date.parse(a+"T00
 const validForm=(v:unknown)=>v==="10-K"||v==="10-K/A";
 const unitFor=(metric:AnnualMetric)=>metric==="dilutedEps"?"USD/shares":
  metric==="dilutedWeightedShares"?"shares":"USD";
-function factRows(doc:unknown,tags:readonly string[],flow:boolean,unit:string):{tag:string;fact:SECUnitEntry}[]{
+function factRows(doc:unknown,tags:readonly string[],flow:boolean,unit:string,asOfDate:string):{tag:string;fact:SECUnitEntry}[]{
  if(!isRecord(doc)||!isRecord(doc.facts)||!isRecord(doc.facts["us-gaap"]))return [];
  const gaap=doc.facts["us-gaap"] as Fact;
  const output:{tag:string;fact:SECUnitEntry}[]=[];
@@ -34,7 +34,7 @@ function factRows(doc:unknown,tags:readonly string[],flow:boolean,unit:string):{
   if(!isRecord(concept)||!isRecord(concept.units)||!Array.isArray(concept.units[unit]))continue;
   for(const raw of concept.units[unit] as unknown[]){
    if(!isRecord(raw)||!iso(raw.end)||!iso(raw.filed)||!validForm(raw.form)||
-      typeof raw.val!=="number"||!Number.isFinite(raw.val))continue;
+      typeof raw.val!=="number"||!Number.isFinite(raw.val)||raw.filed>asOfDate)continue;
    if(flow){
     if(!iso(raw.start)||raw.fp!=="FY")continue;
     const duration=elapsed(raw.start,raw.end);
@@ -45,10 +45,10 @@ function factRows(doc:unknown,tags:readonly string[],flow:boolean,unit:string):{
  }
  return output;
 }
-function pickAnnual(doc:unknown,tags:readonly string[],flow:boolean,unit:string):Map<string,{
+function pickAnnual(doc:unknown,tags:readonly string[],flow:boolean,unit:string,asOfDate:string):Map<string,{
  value:number;filed:string;accn:string|null
 }>{
- const items=factRows(doc,tags,flow,unit);
+ const items=factRows(doc,tags,flow,unit,asOfDate);
  const map=new Map<string,{value:number;filed:string;accn:string|null;priority:number}>();
  for(const {tag,fact} of items){
   const end=fact.end!;
@@ -83,10 +83,10 @@ function filingUrl(cik:string,accn:string|null):string|null{
  return "https://www.sec.gov/Archives/edgar/data/"+String(Number(cik))+"/"+accn.replaceAll("-","")+"/";
 }
 /** Select annual full-year periods, no 9-month YTD or mixed 10-Q interim facts. */
-export function parseSECAnnualFinancials(doc:unknown,cik:string):AnnualFinancialRow[]{
+export function parseSECAnnualFinancials(doc:unknown,cik:string,asOfDate="9999-12-31"):AnnualFinancialRow[]{
  const lookup=Object.fromEntries(
   (Object.entries(METRIC_TAGS) as [AnnualMetric,readonly string[]][]).map(([metric,tags])=>
-   [metric,pickAnnual(doc,tags,!["totalAssets","totalLiabilities","cash","stockholdersEquity"].includes(metric),unitFor(metric))])
+   [metric,pickAnnual(doc,tags,!["totalAssets","totalLiabilities","cash","stockholdersEquity"].includes(metric),unitFor(metric),asOfDate)])
  ) as Record<AnnualMetric,ReturnType<typeof pickAnnual>>;
  const ends=[...new Set([...lookup.revenue.keys(),...lookup.netIncome.keys(),
    ...lookup.operatingCashFlow.keys(),...lookup.dilutedEps.keys()])].sort().reverse();
