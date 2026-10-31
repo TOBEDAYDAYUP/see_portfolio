@@ -36,7 +36,8 @@ export function parseCashDividends(raw:unknown):CashDividend[]{
   if(seen.has(key))continue;seen.add(key);
   out.push({id:key,symbol:item.symbol,exDate:item.ex_date,
    payableDate:date(item.payable_date)?item.payable_date:null,
-   declarationDate:date(item.declaration_date)?item.declaration_date:null,
+   declarationDate:date(item.declaration_date)?item.declaration_date:
+    date(item.process_date)?item.process_date:null,
    rateUSD:rate,special:item.special===true});
  }
  return out.sort((a,b)=>a.exDate.localeCompare(b.exDate));
