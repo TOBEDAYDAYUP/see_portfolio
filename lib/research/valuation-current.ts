@@ -1,5 +1,5 @@
 import type { FundamentalSnapshot } from "./fundamentals-types";
-import { calculateFYValuation } from "./valuation-math";
+import { calculateFYValuation } from "./valuation-math.ts";
 
 export type CurrentValuation={
   price:number|null;priceAsOf:string;priceSource:string;
