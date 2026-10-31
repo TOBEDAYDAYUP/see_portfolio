@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { CHART_RANGES } from "../../../lib/research/chart-utils";
-import { MIN_ZOOM_BARS, zoomChartViewport, panChartViewport, classifyChartWheel } from "../../../lib/research/chart-viewport";
+import { MIN_ZOOM_BARS, zoomChartViewport, panChartViewport, dragChartViewport, classifyChartWheel } from "../../../lib/research/chart-viewport";
 import { TARGET_VISIBLE_BARS, bucketVisibleChartBars } from "../../../lib/research/chart-density";
 import type { ChartPayload, ChartRange, ChartBar } from "../../../lib/research/chart-utils";
 
@@ -34,36 +34,27 @@ function HistoryChart({payload,mode,showVolume}:{
   const [hover,setHover]=useState<number|null>(null);
   const chartRef=useRef<SVGSVGElement|null>(null);
   const zoomRef=useRef<Zoom|null>(null);
+  const heldPointer=useRef<{id:number;lastX:number}|null>(null);
+  const [isDragging,setIsDragging]=useState(false);
   useEffect(()=>{zoomRef.current=zoom;},[zoom]);
-  // Only pinch-to-zoom and *horizontal* swipe-to-pan are captured.
-  // Ordinary two-finger vertical swipes must always scroll the entire page.
+  // A normal two-finger swipe (vertical OR horizontal) scrolls the browser.
+  // Only Chrome/macOS pinch (ctrl+wheel) zooms this chart.
   useEffect(()=>{
     const element=chartRef.current;
     if(!element||bars.length<=MIN_ZOOM_BARS)return;
     const handleWheel=(event:WheelEvent)=>{
-      const intent=classifyChartWheel(event,zoomRef.current!==null,bars.length);
-      if(intent==="page-scroll")return; // NEVER prevent default for vertical swipes.
+      if(classifyChartWheel(event,bars.length)!=="pinch-zoom")return;
       const rect=element.getBoundingClientRect();
       if(rect.width<=0)return;
       const unit=event.deltaMode===1?16:event.deltaMode===2?320:1;
-      if(intent==="pinch-zoom"){
-        const viewX=(event.clientX-rect.left)/rect.width*W;
-        const fraction=within((viewX-L)/usableW,0,1);
-        if(event.cancelable)event.preventDefault();
-        setZoom(previous=>zoomChartViewport(previous,bars.length,fraction,event.deltaY*unit));
-        return;
-      }
-      if(intent==="horizontal-pan"&&zoomRef.current){
-        const current=zoomRef.current;
-        const deltaBars=event.deltaX*unit/(rect.width*usableW/W)*(current.end-current.start);
-        const next=panChartViewport(current,bars.length,deltaBars);
-        // At the first/last candle, let the browser handle the swipe.
-        if(next && Math.abs(next.start-current.start)>1e-8){
-          if(event.cancelable)event.preventDefault();
-          zoomRef.current=next;
-          setZoom(next);
-        }
-      }
+      const viewX=(event.clientX-rect.left)/rect.width*W;
+      const fraction=within((viewX-L)/usableW,0,1);
+      if(event.cancelable)event.preventDefault();
+      setZoom(previous=>{
+        const next=zoomChartViewport(previous,bars.length,fraction,event.deltaY*unit);
+        zoomRef.current=next;
+        return next;
+      });
     };
     element.addEventListener("wheel",handleWheel,{passive:false});
     return ()=>element.removeEventListener("wheel",handleWheel);
@@ -108,9 +99,43 @@ function HistoryChart({payload,mode,showVolume}:{
     const bounds=e.currentTarget.getBoundingClientRect();
     return (e.clientX-bounds.left)/bounds.width*W;
   }
+  // Mac trackpad: click/press and keep the finger down, then slide
+  // horizontally. No box-selection, timer or secondary finger required.
+  function onPointerDown(e:ReactPointerEvent<SVGSVGElement>){
+    if(e.button!==0||!e.isPrimary||!zoomRef.current||bars.length<=MIN_ZOOM_BARS)return;
+    heldPointer.current={id:e.pointerId,lastX:e.clientX};
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setIsDragging(true);
+  }
   function onPointerMove(e:ReactPointerEvent<SVGSVGElement>){
     const xp=within(canvasX(e),L,W-R);
     setHover(within(Math.floor((xp-L)/usableW*visible.length),0,visible.length-1));
+    const held=heldPointer.current;
+    if(!held||held.id!==e.pointerId)return;
+    // A released mouse button without pointerup (e.g. window focus change)
+    // must never leave the timeline in a stuck drag state.
+    if(e.pointerType==="mouse"&&(e.buttons&1)===0){
+      heldPointer.current=null;
+      setIsDragging(false);
+      return;
+    }
+    const deltaX=e.clientX-held.lastX;
+    held.lastX=e.clientX;
+    const bounds=e.currentTarget.getBoundingClientRect();
+    const current=zoomRef.current;
+    const next=dragChartViewport(current,bars.length,deltaX,bounds.width*usableW/W);
+    if(next&&current&&Math.abs(next.start-current.start)>1e-8){
+      zoomRef.current=next;
+      setZoom(next);
+    }
+  }
+  function stopDrag(e:ReactPointerEvent<SVGSVGElement>){
+    if(heldPointer.current?.id!==e.pointerId)return;
+    heldPointer.current=null;
+    setIsDragging(false);
+    if(e.currentTarget.hasPointerCapture(e.pointerId)){
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
   }
   const badge="rounded-lg border border-white/15 px-2.5 py-1 text-xs font-medium text-slate-300 disabled:opacity-40";
   return <div>
@@ -140,10 +165,14 @@ function HistoryChart({payload,mode,showVolume}:{
       </div>
     </div>
     <svg ref={chartRef} viewBox={"0 0 "+W+" "+H} role="img"
-      aria-label={"Interactive "+payload.interval+" stock price and volume chart. Two-finger vertical swipes scroll the page. Pinch to zoom; two-finger horizontal swipes pan after zooming. Drag-selection zoom is disabled."}
-      tabIndex={0} className="w-full touch-auto cursor-crosshair select-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#7ce0cc]"
+      aria-label={"Interactive "+payload.interval+" stock price and volume chart. Two-finger swipes scroll the page; pinch to zoom; when zoomed in, press and hold with one finger or the mouse button, then drag left or right to pan the timeline. No box selection."}
+      tabIndex={0} className={"w-full touch-pan-y select-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#7ce0cc] "+(isDragging?"cursor-grabbing":zoom?"cursor-grab":"cursor-crosshair")}
+      onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
-      onPointerLeave={()=>setHover(null)}
+      onPointerUp={stopDrag}
+      onPointerCancel={stopDrag}
+      onLostPointerCapture={stopDrag}
+      onPointerLeave={()=>{if(!heldPointer.current)setHover(null);}}
       onKeyDown={e=>{
         if(e.key==="Escape"){setZoom(null);setHover(null);}
         if(e.key==="ArrowLeft"||e.key==="ArrowRight"){
@@ -194,7 +223,7 @@ function HistoryChart({payload,mode,showVolume}:{
       <text x={W-R} y={H-17} fontSize="12" fill="#879db0" textAnchor="end">{timeLabel(density.buckets.at(-1)!.lastTime,intraday)}</text>
     </svg>
     <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
-      <span>{visible.length} / {TARGET_VISIBLE_BARS} candles · {density.rawCount} source bars · two-finger ↑↓ page scroll · pinch to zoom · two-finger ←→ pan when zoomed</span>
+      <span>{visible.length} / {TARGET_VISIBLE_BARS} candles · {density.rawCount} source bars · two-finger scrolls page · pinch to zoom · click-and-hold + drag ←→ to pan when zoomed</span>
       <span>{zoom?"Zoomed interval":"Full selected period"} · OHLCV aggregation</span>
     </div>
   </div>;
