@@ -1,5 +1,6 @@
 import type { FundamentalSnapshot } from "../../../lib/research/fundamentals-types";
 import { calculateCurrentValuation } from "../../../lib/research/valuation-current";
+import { calculateFYValuation } from "../../../lib/research/valuation-math";
 
 const multiple=(value:number|null)=>value===null?"—":value.toFixed(2)+"×";
 const pct=(value:number|null)=>value===null?"—":(value>0?"+":"")+value.toFixed(2)+"%";
@@ -19,6 +20,9 @@ export default function ValuationAnalysis({data,price,priceAsOf,priceSource}:{
  data:FundamentalSnapshot;price:number|null;priceAsOf:string;priceSource:string;
 }){
  const v=calculateCurrentValuation(data,price,priceAsOf,priceSource);
+ const olderFY=calculateFYValuation(data,price,priceAsOf);
+ const incomplete=v.ttmEnd===null||v.sharesOutstanding===null||v.bookEquity===null;
+ const coverage=data.recent?.coverage;
  return <section aria-label="Company valuation" className="surface-panel rounded-2xl p-5 sm:p-7">
   <div className="flex flex-wrap items-start justify-between gap-3">
    <div>
@@ -33,6 +37,23 @@ export default function ValuationAnalysis({data,price,priceAsOf,priceSource}:{
    <span>Reference close: <strong className="font-medium text-slate-200">{usd(v.price)}</strong> · {priceAsOf} · {priceSource}</span>
    <span>TTM period ended: <strong className="font-medium text-slate-200">{v.ttmEnd??"Unavailable"}</strong></span>
   </div>
+  {incomplete&&<div role="status" className="mt-5 rounded-xl border border-amber-400/30 bg-amber-500/10 p-4">
+   <p className="text-sm font-semibold text-amber-200">Partial SEC data — some ratios unavailable</p>
+   <p className="mt-2 text-xs leading-6 text-amber-200">
+    Annual 10-K values loaded. The quarterly TTM bridge, dated shares or book-equity
+    check did not pass. Missing current ratios are withheld rather than displayed as zero.
+    {coverage
+     ?" Latest detectable SEC 10-Q ended "+(coverage.latest10QPeriodEnd??"not found")+
+      " (filed "+(coverage.latestFiled10Q??"unknown")+"); shares dated "+
+      (coverage.latestSECShareDate??"not found")+"; equity dated "+
+      (coverage.latestSECBookDate??"not found")+"."
+     :" SEC source coverage is unavailable."}
+   </p>
+   <p className="mt-2 text-xs text-amber-200">
+    These diagnostics describe the public source data, not your Alpaca API credentials.
+    Expand Methodology below for calculation warnings.
+   </p>
+  </div>}
   <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
    <Card label="TTM P/E · Approx." value={multiple(v.ttmPEApprox)}
     explain="Reference price / (FY diluted EPS + latest interim YTD EPS − prior YTD EPS)."/>
@@ -54,6 +75,19 @@ export default function ValuationAnalysis({data,price,priceAsOf,priceSource}:{
    <Card label="Market-cap proxy" value={compact(v.marketCapProxyUSD)}
     explain="Dated SEC share count × IEX daily close. Not official or real-time market cap."/>
   </div>
+  {incomplete&&olderFY.available&&<details className="mt-5 rounded-xl border border-white/10 p-4">
+   <summary className="cursor-pointer text-sm font-medium">Older fiscal-year estimates (not current TTM)</summary>
+   <p className="mt-2 text-xs leading-5 text-slate-400">
+    These values use FY{data.fiscalYears[0]?.fiscalYear??"—"} 10-K diluted weighted-average shares
+    as a market-cap proxy, not recent actual shares. They are historical-period approximations
+    and must not replace missing TTM multiples.
+   </p>
+   <div className="mt-3 grid gap-3 sm:grid-cols-3">
+    <Card label="FY P/S · Old proxy" value={multiple(olderFY.psProxy)} explain="Annual revenue and FY weighted-average shares."/>
+    <Card label="FY P/B · Old proxy" value={multiple(olderFY.pbProxy)} explain="FY book equity and FY weighted-average shares."/>
+    <Card label="FY FCF Yield · Old proxy" value={pct(olderFY.fcfYieldProxyPct)} explain="Annual cash flow and FY weighted-average shares."/>
+   </div>
+  </details>}
   <details className="mt-5 rounded-xl border border-white/10 p-4">
    <summary className="cursor-pointer text-sm font-medium">Methodology, latest book equity &amp; data quality</summary>
    <div className="mt-3 space-y-3 text-xs leading-6 text-slate-400">
