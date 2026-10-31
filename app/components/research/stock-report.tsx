@@ -43,7 +43,7 @@ export default function StockReportView({symbol,asset:knownAsset,isFollowed,onFo
         <div><p className="text-xs font-bold tracking-widest text-[#85dbc9]">STOCK REPORT</p>
           <h2 className="mt-2 text-3xl font-semibold">{report?.asset.symbol??symbol}</h2>
           <p className="mt-1 text-sm text-slate-300">{report?.asset.name??knownAsset?.name??"Loading verified company data…"}</p>
-          {report&&<p className="mt-1 text-xs text-slate-500">{report.asset.exchange} · Historical IEX USD data</p>}
+          {report&&<p className="mt-1 text-xs text-slate-500">{report.asset.exchange} · USD · price reference: historical Alpaca IEX</p>}
         </div>
         {report&&<button type="button" disabled={isFollowed} onClick={()=>onFollow(report.asset)}
           className="rounded-xl border border-[#85dbc9]/40 px-4 py-2 text-xs font-semibold text-[#9cebd6] disabled:opacity-60">
@@ -58,8 +58,9 @@ export default function StockReportView({symbol,asset:knownAsset,isFollowed,onFo
           <span className={"text-sm font-semibold "+(report.changePct!==null&&report.changePct<0?"text-rose-300":"text-emerald-300")}>
             {report.changePct===null?"—":pct(report.changePct)} vs previous close
           </span>
-          <span className="text-xs text-slate-500">Last available IEX daily close · {report.asOf}</span>
+          <span className="text-xs text-slate-500">Last completed IEX historical daily bar · {report.asOf} · not a live quote</span>
         </div>
+        <p className="mt-2 text-[11px] text-slate-500">The valuation and price above use the same IEX daily close; the interactive intraday chart may use delayed SIP consolidated bars and therefore show a different time or price. This is not a live consolidated quote.</p>
         <AdvancedStockChart symbol={report.asset.symbol}/>
       </div>}
     </section>
@@ -83,17 +84,14 @@ export default function StockReportView({symbol,asset:knownAsset,isFollowed,onFo
           not forward-looking probability guarantees. No position value or portfolio P/L is assumed.
         </p>
       </section>
-      <FundamentalAnalysis key={report.asset.symbol} symbol={report.asset.symbol} price={report.latestClose} priceAsOf={report.asOf}/>
-      <section className="grid gap-4 md:grid-cols-2">
-        <div className="surface-panel rounded-2xl p-5"><h3 className="font-semibold">12M Growth Forecast</h3>
-          <p className="mt-3 text-2xl font-semibold">—</p>
-          <p className="mt-2 text-xs leading-6 text-slate-400">FY valuation multiples appear above when available. A forward-looking earnings forecast or validated future price target is not yet available.</p>
-        </div>
-        <div className="surface-panel rounded-2xl p-5"><h3 className="font-semibold">Expected Dividends</h3>
-          <p className="mt-3 text-2xl font-semibold">—</p>
-          <p className="mt-2 text-xs leading-6 text-slate-400">Company-level dividend forecast requires verified dividend schedules. No unowned shares are included in Portfolio income.</p>
-        </div>
-      </section>
+      <FundamentalAnalysis key={report.asset.symbol} symbol={report.asset.symbol} price={report.latestClose} priceAsOf={report.asOf} priceSource={report.priceSource}/>
+      <details className="surface-panel rounded-2xl p-5">
+        <summary className="cursor-pointer text-sm font-medium">Upcoming research models</summary>
+        <p className="mt-2 text-xs leading-6 text-slate-400">
+          12-month growth forecasts and verified dividend predictions are not yet available.
+          We will not invent price targets, payouts or assumed holdings.
+        </p>
+      </details>
       <section className="surface-panel rounded-2xl p-5 sm:p-7">
         <h2 className="text-lg font-semibold">Recent Company News</h2>
         <p className="mb-5 mt-1 text-xs text-slate-400">Alpaca-supplied article titles and summaries, not AI-generated analysis.</p>
