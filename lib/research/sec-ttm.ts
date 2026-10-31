@@ -1,5 +1,5 @@
 import type { AnnualFinancialRow } from "./fundamentals-types";
-import { METRIC_TAGS, type SECUnitEntry } from "./financial-math";
+import { METRIC_TAGS, type SECUnitEntry } from "./financial-math.ts";
 
 /** All computations use SEC facts filed on or before asOfDate. */
 export type SECPoint = {value:number;asOf:string;filedAt:string;tag:string};
