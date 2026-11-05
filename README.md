@@ -4,6 +4,23 @@ A lightweight investment research prototype built with **Next.js 16, React 19, T
 
 > **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
 
+## Portfolio equity chart · selectable history windows
+
+Portfolio → Holdings → Portfolio value over time provides five clickable
+time ranges: **1D, 1W, 1M, 1Y, ALL** (default: 1M). Selected windows
+request real Alpaca Paper account equity snapshots with **5-minute** bars
+for 1D, **hourly** bars for 1W, and **daily** snapshots for longer ranges.
+Alpaca's annual API period is `1A` (mapped from the 1Y UI label). ALL
+requests daily history beginning at the actual account's `created_at`,
+without inventing pre-account equity or a fixed multi-year horizon.
+
+The chart preserves honest missing-data states. Fewer than two snapshots
+means no line is drawn. The 1D chart labels the X axis in New York trading
+time. All account-history API routes remain local-development-only pending
+authentication; requests do not place trades and never expose paper keys.
+Historical equity changes can include deposits and withdrawals and are
+not time-weighted investment returns.
+
 ## Research Stock Search · Daily IEX price and change
 
 Research → Stock Search now adds **the latest available Alpaca IEX daily-session
