@@ -56,6 +56,16 @@ optional web search requires separately configured retrieval tools such as
 Ollama's authenticated web search API; no arbitrary web browsing has been
 granted in this UI change.
 
+## AI Assistant message formatting
+
+Regular model responses now render a **restricted Markdown subset** as
+readable headings, bold/italic spans, bullet/numbered lists, quotes, inline
+code and fenced code. The parser treats raw HTML and arbitrary Markdown
+links as literal text; React escapes all model-supplied content and never
+inserts HTML. This fixes visible `###`, `**` and `*` markers in saved and
+new conversations. User messages, independently sourced evidence cards and
+the fixed-schema SEE Quant report renderer are unchanged.
+
 ## AI Assistant · evidence-based stock-analysis format v1
 
 For an explicit one-company analysis request (for example "Analyze AAPL" or
