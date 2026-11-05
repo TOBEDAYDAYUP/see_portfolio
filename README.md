@@ -21,15 +21,15 @@ are requested per batch, cached in memory for 25 seconds to conserve provider
 requests. Paper API credentials stay on the server; the new search-quotes
 endpoint remains local-development-only until authentication is implemented.
 
-## Research DCF v0.1 — five-year equity cash-flow scenario model
+## Research DCF v0.2 — one-year cash-flow forecast with terminal value
 
 Research → Stock Reports → Company Fundamentals now includes an interactive
-five-year discounted cash-flow panel. It starts from **verified SEC 10-Q TTM
+one-year explicit discounted cash-flow forecast with terminal value. It starts from **verified SEC 10-Q TTM
 or recent 10-K annual operating cash flow minus reported PP&E purchases**
 and a validated, dated SEC issuer-level outstanding-share count. Users
-explicitly adjust five-year annual cash-flow growth, **cost of equity**, and
-terminal growth. The panel shows projected annual cash flows, their present
-values, Gordon-growth terminal value, modeled equity value per share,
+explicitly adjust next-year cash-flow growth, **cost of equity**, and
+terminal growth. The panel shows year-one projected cash flow, its present
+value, a year-one Gordon-growth terminal value discounted to today, modeled equity value per share,
 scenario upside/downside against the dated Alpaca IEX close, and a 3×3
 discount-rate/terminal-growth sensitivity matrix. Invalid and missing
 inputs produce no invented valuation.
@@ -37,7 +37,9 @@ inputs produce no invented valuation.
 **Important limitation:** This is a simplified **equity cash-flow proxy DCF**.
 CFO minus capex omits net borrowing, so it is not a fully reconciled FCFE.
 It is also NOT an unlevered FCFF/WACC enterprise valuation and must not be
-represented as one. It assumes constant projected growth, unchanged shares
+represented as one. The explicit forecast covers only year one; all later-year cash flows are represented
+by the terminal perpetuity, which makes the estimate highly sensitive to terminal
+assumptions. It assumes constant projected growth, unchanged shares
 and investor-supplied—not verified analyst—discount/growth rates.
 Negative cash flow, stale or unavailable share snapshots, and unsupported
 multiple-share-class issuers are withheld. The prototype is unsuitable for
