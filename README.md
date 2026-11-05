@@ -27,6 +27,45 @@ value over time** and **Portfolio health analysis** cards higher on desktop.
 The chart SVG viewBox, column widths, card sizes, metrics and data behavior
 are unchanged. Other Portfolio and Research pages retain their spacing.
 
+## AI Assistant · grounded SEE Portfolio context v1
+
+The assistant can now answer supported **stock research** questions using
+date-stamped read-only data retrieved by the server before calling the
+configured Ollama or DeepSeek model. The model **does not issue network or
+trading tool calls**: deterministic app code selects the relevant symbols and
+data sources, and returns independently inspectable source cards in the
+conversation.
+
+- **Individual stocks**: latest completed historical Alpaca IEX daily close
+  and previous-close return, SEE Risk Engine volatility/drawdown/empirical
+  VaR95/ES95, SEC EDGAR annual and eligible quarterly TTM facts, plus SEE
+  valuation multiples. Optionally includes up to three provider-labeled
+  headlines when the user asks for news. Supports explicit symbols or company
+  names verified against the Alpaca active-asset directory, with fallback
+  aliases for widely known issuers.
+- **Paper portfolio**: only if the user explicitly asks about their own
+  positions/portfolio **and local Ollama is selected**, reads the Alpaca
+  Paper account/positions, open unrealized P/L, and on demand the same SEE
+  portfolio valuation, risk and dividend modules. Private account context is
+  NEVER sent to DeepSeek cloud by default. No portfolio trades or order
+  permissions. A production deployment still needs user auth and permissions.
+- **Grounding/provenance**: every included dataset carries a source and date,
+  uses the existing SEE calculation functions, and is also returned to the
+  front end as expandable "Verified data & sources". Unavailable or
+  stale data remains unknown, not an assumed zero. A 0.6B local model may
+  still misunderstand or misinterpret figures: check the evidence cards
+  rather than treating its prose as authoritative.
+- **Cost/performance**: up to two tickers per question, at most eight
+  evidence sections, bounded text and optional expensive data sources loaded
+  only for matching user intent. Full DCF remains a separately user-driven
+  assumption model; the assistant does **not** invent DCF targets.
+
+Try questions such as "What are AAPL's last available IEX close, TTM P/E
+and 1-day ES95? Cite sources" or, with Ollama, "What stocks are in my
+Paper portfolio and what is my unrealized P/L?" Provider credentials remain
+server-side in `.env.local`. The relevant market source must actually be
+available on the local Mac; CI does not prove external Alpaca/SEC connectivity.
+
 ## Test AI Assistant locally before spending on DeepSeek
 
 The AI Assistant now supports **two opt-in server-side backends** while
