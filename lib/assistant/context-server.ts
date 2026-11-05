@@ -14,11 +14,13 @@ import type {ResearchAsset} from "../research/types";
 
 const val=(n:number|null|undefined,d=2)=>typeof n==="number"&&Number.isFinite(n)
   ?n.toLocaleString("en-US",{maximumFractionDigits:d}):"unavailable";
-const stamp=()=>new Date().toISOString();
-const marketToday=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"America/New_York",
-  year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+const marketToday=()=>{
+ const fields=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",
+   year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+ const part=(type:string)=>fields.find(f=>f.type===type)?.value??"";
+ return part("year")+"-"+part("month")+"-"+part("day");
+};
 const clean=(s:string)=>s.replace(/[\x00-\x1f\x7f]/g," ").trim().slice(0,180);
-const safeLimit=(n:number)=>Math.min(n,1e12);
 const USER_LIMIT=2;
 
 type ContextResult={evidence:AssistantEvidence[];notes:string[]};
