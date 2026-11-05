@@ -414,3 +414,91 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .glass-nav-item, .theme-choice { transition: none !important; }
 }
+
+
+/* Crosshair labels float on top of the original full-width chart.
+   Identical accessible high-contrast colors in light and dark themes. */
+.chart-inspector-label {
+  position: absolute;
+  z-index: 70;
+  border: 1px solid #bdc9d2;
+  border-radius: 9px;
+  background: #f0f3f5;
+  color: #101820;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 6px 24px rgba(20, 39, 49, .20);
+  max-width: min(420px, 92vw);
+  text-align: center;
+  white-space: normal;
+}
+.chart-inspector-date {
+  top: 0;
+  transform: translate(-50%, -50%);
+}
+.chart-inspector-value {
+  transform: translate(8px, -50%);
+}
+.see-shell[data-theme="light"] .chart-inspector-label {
+  color: #101820;
+  background: #f0f3f5;
+  border-color: #bdc9d2;
+}
+
+/* DCF: assumption inputs must never have dark text on navy in light mode. */
+.dcf-assumption-input {
+  color: #e7f0fa;
+  background: #101c2e;
+  border-color: #3a4f67;
+}
+.see-shell[data-theme="light"] .dcf-assumption-input {
+  color: #102331;
+  background: #ffffff;
+  border-color: #a9c5cb;
+}
+.see-shell[data-theme="light"] .dcf-assumption-input:focus-visible {
+  outline-color: #148d7c;
+  border-color: #148d7c;
+}
+.see-shell[data-theme="light"] .dcf-assumption-input:disabled {
+  color: #607582;
+  background: #eef5f3;
+}
+
+/* Light-mode Research-only pale mint sidebar.
+   Portfolio sidebar retains its existing appearance; dark theme unchanged. */
+.see-shell[data-theme="light"] .glass-sidebar.research-sidebar {
+  background: linear-gradient(165deg, #effaf5 0%, #e7f6ef 100%);
+  border-right-color: #cde7da;
+  box-shadow: inset -1px 0 0 rgba(75, 147, 122, .08);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.see-shell[data-theme="light"] .research-sidebar .text-slate-100,
+.see-shell[data-theme="light"] .research-sidebar .text-slate-200 {
+  color: #24483e;
+}
+.see-shell[data-theme="light"] .research-sidebar .text-slate-400 {
+  color: #48665d;
+}
+.see-shell[data-theme="light"] .research-sidebar .glass-nav-item:not([aria-current="page"]) {
+  color: #37584e;
+}
+.see-shell[data-theme="light"] .research-sidebar .glass-nav-item:hover {
+  color: #123f35;
+  background: #d9f1e5;
+  border-color: #c2e7d5;
+}
+.see-shell[data-theme="light"] .research-sidebar .glass-nav-item[aria-current="page"] {
+  color: #0b6251;
+  background: #cceee0;
+  border-color: #a6dccc;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5);
+}
+.see-shell[data-theme="light"] .research-sidebar .glass-nav-item[aria-current="page"]::before {
+  background: #159b84;
+  box-shadow: none;
+}
