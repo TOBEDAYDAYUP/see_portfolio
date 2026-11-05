@@ -135,9 +135,9 @@ function HistoryChart({payload,mode,showVolume}:{
   function onPointerMove(e:ReactPointerEvent<SVGSVGElement>){
     const xp=within(canvasX(e),L,W-R);
     setHover(within(Math.floor((xp-L)/usableW*visible.length),0,visible.length-1));
-    const bounds=e.currentTarget.getBoundingClientRect();
-    if(bounds.height>0){
-      const y=(e.clientY-bounds.top)/bounds.height*H;
+    const pointerBounds=e.currentTarget.getBoundingClientRect();
+    if(pointerBounds.height>0){
+      const y=(e.clientY-pointerBounds.top)/pointerBounds.height*H;
       setHoverY(y>=PRICE_TOP&&y<=PRICE_BOTTOM?y:null);
     }
     const held=heldPointer.current;
