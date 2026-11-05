@@ -48,3 +48,23 @@ export function extractAssistantContent(value: unknown): string | null {
   const content = (message as Record<string, unknown>).content;
   return typeof content === "string" && content.trim() ? content.trim() : null;
 }
+
+/** Extract a non-streaming Ollama /api/chat response without exposing
+ * the model's internal "thinking" field to the user. */
+export function extractOllamaContent(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const message = (value as Record<string, unknown>).message;
+  if (!message || typeof message !== "object" || Array.isArray(message)) return null;
+  const content = (message as Record<string, unknown>).content;
+  return typeof content === "string" && content.trim() ? content.trim() : null;
+}
+
+/** GET /api/tags response lists models already pulled locally; never trigger
+ * a model download implicitly from a browser request. */
+export function hasInstalledOllamaModel(value: unknown, name: string): boolean {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const models = (value as Record<string, unknown>).models;
+  return Array.isArray(models) && models.some((entry: unknown) =>
+    entry && typeof entry === "object" && !Array.isArray(entry)
+    && (entry as Record<string, unknown>).name === name);
+}
