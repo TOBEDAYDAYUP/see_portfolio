@@ -1,5 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
+import {hasPrivatePreviewSession,isPreviewConfigured} from "../../../../lib/private-preview/access";
+import {reserveAssistantBudget} from "../../../../lib/private-preview/limits";
 import {loadAssistantContext} from "../../../../lib/assistant/context-server";
 import {formatAssistantEvidence,classifyAssistantDataNeeds} from "../../../../lib/assistant/context";
 import {requestsStandardStockReport,formatStandardStockReport} from "../../../../lib/assistant/stock-analysis";
@@ -21,7 +23,8 @@ function configuration() {
   const model = provider === "ollama"
     ? (process.env.OLLAMA_MODEL?.trim() || DEFAULT_OLLAMA_MODEL)
     : (process.env.DEEPSEEK_MODEL?.trim() || DEFAULT_DEEPSEEK_MODEL);
-  const productionEnabled = process.env.NODE_ENV !== "production" || process.env.DEEPSEEK_CHAT_ENABLED === "true";
+  const productionEnabled = process.env.NODE_ENV !== "production" ||
+    (process.env.DEEPSEEK_CHAT_ENABLED === "true" && isPreviewConfigured());
   const reason = provider === "invalid"
     ? "ASSISTANT_PROVIDER must be either ollama or deepseek."
     : provider === "ollama" && process.env.NODE_ENV === "production"
@@ -50,7 +53,10 @@ async function ollamaStatus(model: string) {
   }
 }
 
-export async function GET() {
+export async function GET(request:Request) {
+  if(!hasPrivatePreviewSession(request))
+    return NextResponse.json({status:"unauthorized",configured:false,
+      message:"Owner login required for cloud AI."},{status:401,headers:responseHeaders});
   const config = configuration();
   const local = config.provider === "ollama" && config.configured
     ? await ollamaStatus(config.model) : null;
@@ -64,6 +70,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  if(!hasPrivatePreviewSession(request))
+    return NextResponse.json({status:"unauthorized",
+      message:"Owner login required for cloud AI."},{status:401,headers:responseHeaders});
   const config = configuration();
   if (!config.configured)
     return NextResponse.json({ status: "not_configured", message: config.reason },
@@ -80,6 +89,10 @@ export async function POST(request: Request) {
   if (!messages.ok)
     return NextResponse.json({ status: "error", message: messages.message },
       { status: 400, headers: responseHeaders });
+  if(process.env.NODE_ENV==="production" && !(await reserveAssistantBudget()))
+    return NextResponse.json({status:"rate_limited",
+      message:"Private Beta AI quota reached, or the rate-limit service is unavailable. Try again later."},
+      {status:429,headers:responseHeaders});
 
   // Only the app's own read-only services decide what data is relevant:
   // the model cannot choose arbitrary URLs, invoke tools or place trades.
