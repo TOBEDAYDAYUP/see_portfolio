@@ -10,20 +10,22 @@ const path=(range,createdAt,nowIso)=>{
  return url.searchParams;
 };
 test("exactly five allowed chart ranges, rejects arbitrary upstream parameters",()=>{
- assert.deepEqual([...portfolioHistoryRanges],["1D","1W","1M","1Y","ALL"]);
+ assert.deepEqual([...portfolioHistoryRanges],["1D","5D","1M","1Y","ALL"]);
  for(const range of portfolioHistoryRanges)assert.equal(isPortfolioHistoryRange(range),true);
- for(const other of ["1A","5Y","all","../v2/orders","1Y&secret=true",""]){
+ for(const other of ["1W","1A","5Y","all","../v2/orders","1Y&secret=true",""]){
   assert.equal(isPortfolioHistoryRange(other),false);
  }
 });
-test("1D and 1W request actual intraday equity snapshots",()=>{
+test("1D and 5D request actual intraday equity snapshots",()=>{
  const day=path("1D");
  assert.equal(day.get("period"),"1D");
  assert.equal(day.get("timeframe"),"5Min");
  assert.equal(day.get("intraday_reporting"),"market_hours");
- const week=path("1W");
- assert.equal(week.get("period"),"1W");
- assert.equal(week.get("timeframe"),"1H");
+ const fiveDays=path("5D");
+ // Look back through weekends and holidays; the server keeps last five sessions.
+ assert.equal(fiveDays.get("period"),"21D");
+ assert.equal(fiveDays.get("timeframe"),"1H");
+ assert.equal(fiveDays.get("intraday_reporting"),"market_hours");
 });
 test("1M and 1Y use daily snapshots; annual Alpaca unit is A",()=>{
  const month=path("1M");
@@ -54,9 +56,10 @@ test("ALL always has an explicit end, and rejects impossible future starts",()=>
 });
 test("only unsupported intraday ranges can use lower-resolution Alpaca fallback",()=>{
  const d=portfolioHistoryFallbackPath("1D");
- const w=portfolioHistoryFallbackPath("1W");
+ const w=portfolioHistoryFallbackPath("5D");
  assert.ok(d?.includes("timeframe=1H"));
  assert.ok(w?.includes("timeframe=1D"));
+ assert.ok(w?.includes("period=21D"));
  assert.equal(portfolioHistoryFallbackPath("1M"),null);
  assert.equal(portfolioHistoryFallbackPath("1Y"),null);
  assert.equal(portfolioHistoryFallbackPath("ALL"),null);

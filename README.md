@@ -7,21 +7,27 @@ A lightweight investment research prototype built with **Next.js 16, React 19, T
 ## Portfolio equity chart · selectable history windows
 
 Portfolio → Holdings → Portfolio value over time provides five clickable
-time ranges: **1D, 1W, 1M, 1Y, ALL** (default: 1M). Selected windows
+time ranges: **1D, 5D, 1M, 1Y, ALL** (default: 1M). Selected windows
 request real Alpaca Paper account equity snapshots with **5-minute** bars
-for 1D, **hourly** bars for 1W, and **daily** snapshots for longer ranges.
+for 1D, **hourly** bars for 5D, and **daily** snapshots for longer ranges.
+5D means the **last five actual NY equity-market sessions**, not five
+calendar dates: the server requests 21 calendar days of Alpaca market-hours
+data and retains only the latest five distinct observed weekdays.
+Weekends, exchange holidays, and missing sessions are not synthesized.
 Alpaca's annual API period is `1A` (mapped from the 1Y UI label). ALL
 requests daily history from the actual account's `created_at` through an
 explicit current-time `end` (omitting `end` can default to a month), without
 inventing pre-account equity or a fixed multi-year horizon.
-If Alpaca rejects the high-frequency 1D/1W requests, the app tries actual
+If Alpaca rejects the high-frequency 1D/5D requests, the app tries actual
 lower-resolution Alpaca hourly/daily data and labels it as a fallback; it
 never interpolates or invents account equity. Failures show a diagnostic
 HTTP/endpoint status and a retry button rather than an opaque generic error.
 
 The chart preserves honest missing-data states. Fewer than two snapshots
-means no line is drawn. The 1D chart labels the X axis in New York trading
-time. All account-history API routes remain local-development-only pending
+means no line is drawn. The X axis uses five labels from actual observations (first, three interior
+timestamps, last), or fewer if the API has fewer observations. 5D uses one
+timestamp from each observed trading session, with no empty weekend slot.
+The 1D chart labels its X axis in New York trading time. All account-history API routes remain local-development-only pending
 authentication; requests do not place trades and never expose paper keys.
 Historical equity changes can include deposits and withdrawals and are
 not time-weighted investment returns.
