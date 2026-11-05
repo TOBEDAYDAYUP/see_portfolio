@@ -5,15 +5,18 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { CHART_RANGES } from "../../../lib/research/chart-utils";
 import { MIN_ZOOM_BARS, zoomChartViewport, panChartViewport, dragChartViewport, classifyChartWheel } from "../../../lib/research/chart-viewport";
 import { TARGET_VISIBLE_BARS, bucketVisibleChartBars } from "../../../lib/research/chart-density";
+import {MARKET_CHART_STYLES,isHollowCandle,marketCandleIsUp,marketTimeTickIndices,inspectionBarTimestamp,type MarketChartStyle} from "../../../lib/research/market-chart-style";
 import type { ChartPayload, ChartRange } from "../../../lib/research/chart-utils";
 
-type Mode="candles"|"line"|"bars";
+type Mode=MarketChartStyle;
 type ChartResponse={status:"ok";data:ChartPayload}|{status:"error"|"not_configured";message:string};
 type Zoom={start:number;end:number};
 const money=(v:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2}).format(v);
 const compact=(v:number)=>new Intl.NumberFormat("en-US",{notation:"compact",maximumFractionDigits:1}).format(v);
-const W=1000,H=440,L=66,R=18,PRICE_TOP=25,PRICE_BOTTOM=302,VOL_TOP=335,VOL_BOTTOM=394;
+const W=1000,H=440,L=22,R=78,PRICE_TOP=28,PRICE_BOTTOM=302,VOL_TOP=335,VOL_BOTTOM=394;
 const usableW=W-L-R;
+const formatPrice=(v:number)=>v.toFixed(2);
+const candleUp="#26a69a",candleDown="#e04d64";
 function timeLabel(time:string,intraday:boolean){
   const dt=new Date(time);
   if(!Number.isFinite(dt.getTime()))return time;
@@ -98,17 +101,23 @@ function HistoryChart({payload,mode,showVolume}:{
   const x=(i:number)=>L+usableW*(i+.5)/visible.length;
   const barWidth=Math.max(1,Math.min(12,usableW/visible.length*.72));
   const path=visible.map((bar,i)=>(i===0?"M":"L")+x(i).toFixed(2)+" "+pricePosition(bar.close,low,high).toFixed(2)).join(" ");
+  const areaPath=path+" L"+x(visible.length-1).toFixed(2)+" "+PRICE_BOTTOM+
+    " L"+x(0).toFixed(2)+" "+PRICE_BOTTOM+" Z";
+  const timelineTicks=marketTimeTickIndices(visible.length);
+  const latest=visible[visible.length-1];
+  const latestY=pricePosition(latest.close,low,high);
+  const latestColor=latest.close>=latest.open?candleUp:candleDown;
   const intraday=payload.interval==="5Min"||payload.interval==="15Min"||payload.interval==="30Min";
-  const focusedDates=focusedGroup
-    ? timeLabel(focusedGroup.firstTime,intraday)+
-      (focusedGroup.firstTime===focusedGroup.lastTime?"":" – "+timeLabel(focusedGroup.lastTime,intraday))
-    : "No history";
-  // For aggregated OHLCV buckets show the source interval, not a fake single
-  // trade timestamp. The value is the last source close in the bucket.
-  const inspectorDates=focusedGroup
-    ? inspectionTimestamp(focusedGroup.firstTime,intraday)+
-      (focusedGroup.firstTime===focusedGroup.lastTime?"":" – "+inspectionTimestamp(focusedGroup.lastTime,intraday))
-    : "";
+  // Use the LAST REAL underlying bar timestamp in each aggregated bucket.
+  // A bucket is an OHLC summary; we never claim its close happened at a midpoint.
+  const focusedDate=focusedGroup
+    ?inspectionTimestamp(inspectionBarTimestamp(focusedGroup),intraday)
+    :"No history";
+  const timeBadgeWidth=intraday?186:128;
+  const cursorX=currentHover===null?0:x(currentHover);
+  const badgeX=within(cursorX-timeBadgeWidth/2,L,W-R-timeBadgeWidth);
+  const cursorY=focused?pricePosition(focused.close,low,high):0;
+  const showLastPriceBadge=currentHover===null||Math.abs(latestY-cursorY)>22;
   function canvasX(e:ReactPointerEvent<SVGSVGElement>):number{
     const bounds=e.currentTarget.getBoundingClientRect();
     return (e.clientX-bounds.left)/bounds.width*W;
@@ -153,14 +162,14 @@ function HistoryChart({payload,mode,showVolume}:{
   }
   const badge="rounded-lg border border-white/15 px-2.5 py-1 text-xs font-medium text-slate-300 disabled:opacity-40";
   return <div>
-    <div className="mb-3 flex flex-wrap items-start justify-between gap-3 rounded-xl bg-[#1c2a40] px-3 py-3">
+    <div className="market-chart-toolbar mb-2 flex flex-wrap items-start justify-between gap-3 border-b border-white/10 px-1 py-2">
       <div className="min-w-0">
-        <p className="text-xs text-slate-400">{focusedDates} · {payload.interval} source · New York time</p>
+        <p className="text-xs text-slate-400">Historical {payload.interval} · New York time · {focusedGroup?.underlyingCount??0} source bars in selected bucket</p>
         {focused&&<div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold tabular-nums">
-          <span>O {money(focused.open)}</span><span>H {money(focused.high)}</span>
-          <span>L {money(focused.low)}</span><span>C {money(focused.close)}</span>
+          <span>O {formatPrice(focused.open)}</span><span>H {formatPrice(focused.high)}</span>
+          <span>L {formatPrice(focused.low)}</span><span>C {formatPrice(focused.close)}</span>
           <span className="text-slate-400">Vol {compact(focused.volume)}</span>
-          <span className="text-slate-400">{focusedGroup?.underlyingCount??0} source bars grouped</span>
+
         </div>}
       </div>
       <div className="flex flex-wrap gap-2">
@@ -178,10 +187,10 @@ function HistoryChart({payload,mode,showVolume}:{
         }}>→</button>
       </div>
     </div>
-    <div className="relative overflow-visible">
+    <div className="market-chart-frame relative overflow-hidden">
     <svg ref={chartRef} viewBox={"0 0 "+W+" "+H} role="img"
       aria-label={"Interactive "+payload.interval+" stock price and volume chart. Two-finger swipes scroll the page; pinch to zoom; when zoomed in, press and hold with one finger or the mouse button, then drag left or right to pan the timeline. No box selection."}
-      tabIndex={0} className={"w-full touch-pan-y select-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#7ce0cc] "+(isDragging?"cursor-grabbing":zoom?"cursor-grab":"cursor-crosshair")}
+      tabIndex={0} className={"market-price-canvas w-full touch-pan-y select-none outline-none focus-visible:ring-2 focus-visible:ring-[#7ce0cc] "+(isDragging?"cursor-grabbing":zoom?"cursor-grab":"cursor-crosshair")}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={stopDrag}
