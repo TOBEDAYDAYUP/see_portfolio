@@ -100,7 +100,7 @@ export default function AIAssistantWorkspace({t,threadId,messages,onAppend,onNew
 
   const suggestions = [
     t("Explain the difference between P/E and free-cash-flow yield.", "解释市盈率与自由现金流收益率的区别。"),
-    t("Show AAPL latest available price, valuation and historical risk with sources.", "引用数据分析 AAPL 最近收盘价、估值和历史风险。"),
+    t("Analyze AAPL with the SEE Quant template and cite dated sources.", "使用 SEE Quant 标准模板分析 AAPL，并引用有日期的数据来源。"),
     t("What does my Paper portfolio hold, and how much is its unrealized P/L?", "我的 Paper Portfolio 持有哪些股票，浮动盈亏是多少？"),
   ];
   const ready = connection === "configured";
