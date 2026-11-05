@@ -142,7 +142,7 @@ export default function PortfolioOverview({account,history,historyAvailable,posi
           </div>
         : !loaded
           ? <div role="status" className="grid min-h-[245px] place-items-center text-center text-sm text-slate-400">Loading {range} Alpaca account history…</div>
-          : <PaperEquityChart points={displayedPoints} range={range}/>} 
+          : <PaperEquityChart key={range+"-"+fetchedAt} points={displayedPoints} range={range}/>} 
       <p className="mt-2 border-t border-white/10 pt-2 text-[11px] leading-5 text-slate-500">
         Changes in account equity may include deposits and withdrawals; they are not a time-weighted investment return. No fictional performance data is shown.
       </p>
