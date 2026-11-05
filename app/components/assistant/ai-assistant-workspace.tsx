@@ -4,6 +4,7 @@ import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import type { AssistantChatMessage } from "../../../lib/assistant/chat";
 import type {AssistantEvidence} from "../../../lib/assistant/context";
 import type {SavedAssistantMessage} from "../../../lib/assistant/chat-history";
+import QuantReportMessage from "./quant-report-message";
 import type { Translator } from "../../../types/app";
 
 type ConnectionState = "checking" | "configured" | "unconfigured" | "error";
@@ -61,7 +62,7 @@ export default function AIAssistantWorkspace({t,threadId,messages,onAppend,onNew
       });
       const data = await response.json() as {
         status?: string;
-        message?: AssistantChatMessage | string;
+        message?: (AssistantChatMessage & {format?:"see_quant_v1"}) | string;
         model?: string;
         evidence?: AssistantEvidence[];
         dataNotes?: string[];
@@ -74,6 +75,7 @@ export default function AIAssistantWorkspace({t,threadId,messages,onAppend,onNew
       if (!response.ok || !data.message || typeof data.message === "string")
         throw new Error(typeof data.message === "string" ? data.message : t("The assistant could not answer.", "AI 助手暂时无法回答。"));
       onAppend(threadId,{...data.message as AssistantChatMessage,
+        ...(data.message.format==="see_quant_v1"?{format:"see_quant_v1" as const}:{}),
         evidence:Array.isArray(data.evidence)?data.evidence:[],
         dataNotes:Array.isArray(data.dataNotes)?data.dataNotes:[]});
       if (data.model) setModel(data.model);
@@ -98,7 +100,7 @@ export default function AIAssistantWorkspace({t,threadId,messages,onAppend,onNew
 
   const suggestions = [
     t("Explain the difference between P/E and free-cash-flow yield.", "解释市盈率与自由现金流收益率的区别。"),
-    t("Show AAPL latest available price, valuation and historical risk with sources.", "引用数据分析 AAPL 最近收盘价、估值和历史风险。"),
+    t("Analyze AAPL with the SEE Quant template and cite dated sources.", "使用 SEE Quant 标准模板分析 AAPL，并引用有日期的数据来源。"),
     t("What does my Paper portfolio hold, and how much is its unrealized P/L?", "我的 Paper Portfolio 持有哪些股票，浮动盈亏是多少？"),
   ];
   const ready = connection === "configured";
@@ -150,8 +152,11 @@ export default function AIAssistantWorkspace({t,threadId,messages,onAppend,onNew
           </div>
         </div>}
         {messages.map((message, index) => <div key={`${message.role}-${index}`} className={"flex "+(message.role === "user" ? "justify-end" : "justify-start")}>
-          <div className={"max-w-[88%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-6 sm:max-w-[76%] "+(message.role === "user" ? "ai-user-bubble rounded-br-md" : "rounded-bl-md border border-white/10 bg-[#101d30] text-slate-200")}>
-            {message.content}
+          <div className={"max-w-[94%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-7 "+(message.format==="see_quant_v1"?"sm:max-w-[95%] ":"sm:max-w-[76%] ")+(message.role === "user" ? "ai-user-bubble rounded-br-md" : "rounded-bl-md border border-white/10 bg-[#101d30] text-slate-200")}>
+            {message.format==="see_quant_v1"&&<p className="mb-3 border-b border-white/10 pb-2 text-[11px] font-semibold tracking-wide text-[#188976]">SEE Quant · Source-backed Report</p>}
+            {message.format==="see_quant_v1"
+              ?<QuantReportMessage content={message.content}/>
+              :message.content}
             {message.role==="assistant"&&((message.evidence?.length??0)>0||(message.dataNotes?.length??0)>0)&&
               <details className="mt-3 whitespace-normal border-t border-white/10 pt-2 text-xs text-slate-400">
                 <summary className="cursor-pointer font-semibold">
