@@ -26,8 +26,9 @@ const signedPct=(v:number|null)=>{
 /** Original two-column chart/radar layout, now driven by REAL Alpaca paper equity data. */
 export default function PortfolioOverview({account,history,historyAvailable,positionCount,fetchedAt}:Props) {
   const [range,setRange]=useState<PortfolioHistoryRange>("1M");
+  const [retryVersion,setRetryVersion]=useState(0);
   const [remote,setRemote]=useState<{
-    range:PortfolioHistoryRange;token:string;points:PortfolioHistoryPoint[];
+    range:PortfolioHistoryRange;token:string;points:PortfolioHistoryPoint[];resolution:string;
   }|null>(null);
   const [remoteError,setRemoteError]=useState<{
     range:PortfolioHistoryRange;token:string;message:string;
@@ -40,25 +41,45 @@ export default function PortfolioOverview({account,history,historyAvailable,posi
         const response=await fetch("/api/alpaca/portfolio/history?range="+encodeURIComponent(range),{
           cache:"no-store",signal:controller.signal,
         });
-        const data=await response.json() as PaperHistoryResponse;
+        // A development-server 404/500 may be HTML, not JSON. Distinguish
+        // that failure from Alpaca returning no account history.
+        const textBody=await response.text();
+        let data:PaperHistoryResponse;
+        try{
+          data=JSON.parse(textBody) as PaperHistoryResponse;
+        }catch{
+          throw new Error(response.status===404
+            ?"History API route not found (HTTP 404). Restart npm run dev after pulling the latest code."
+            :"History API returned an invalid response (HTTP "+response.status+"). Check the local Next.js server console.");
+        }
         if(controller.signal.aborted)return;
         if(response.ok&&data.status==="ok"&&data.range===range){
-          setRemote({range,token:fetchedAt,points:data.points});
+          setRemote({range,token:fetchedAt,points:data.points,resolution:data.resolution});
           setRemoteError(null);
         }else{
           setRemote(null);
           setRemoteError({range,token:fetchedAt,message:
             data.status==="error"||data.status==="not_configured"?data.message:"Account history unavailable."});
         }
-      }catch{
+      }catch(error){
         if(!controller.signal.aborted){
+          const message=error instanceof Error
+            ?(error instanceof TypeError
+              ?"Could not reach the history API. Check that npm run dev is running."
+              :error.message)
+            :"The history API request failed.";
           setRemote(null);
-          setRemoteError({range,token:fetchedAt,message:"Unable to load historical account equity."});
+          setRemoteError({range,token:fetchedAt,message});
         }
       }
     })();
     return ()=>controller.abort();
-  },[range,fetchedAt]);
+  },[range,fetchedAt,retryVersion]);
+  const retryHistory=()=>{
+    setRemote(null);
+    setRemoteError(null);
+    setRetryVersion(value=>value+1);
+  };
   const selectRange=(next:PortfolioHistoryRange)=>{
     if(next===range)return;
     setRange(next);
@@ -112,9 +133,13 @@ export default function PortfolioOverview({account,history,historyAvailable,posi
           </button>)}
         </div>
       </div>
-      <p className="mt-2 text-[11px] text-slate-500" aria-live="polite">{range} · {portfolioHistoryResolution[range]} · Alpaca Paper</p>
+      <p className="mt-2 text-[11px] text-slate-500" aria-live="polite">{range} · {validRemote?remote.resolution:portfolioHistoryResolution[range]} · Alpaca Paper</p>
       {errorMessage
-        ? <div role="status" className="grid min-h-[245px] place-items-center px-4 text-center text-sm text-amber-200">{errorMessage}</div>
+        ? <div role="status" className="grid min-h-[245px] place-items-center content-center gap-3 px-4 text-center text-sm text-amber-200">
+            <p>{errorMessage}</p>
+            {range!=="1M"&&<button type="button" onClick={retryHistory}
+              className="rounded-lg border border-amber-400/30 px-3 py-2 text-xs font-semibold hover:bg-amber-400/10">Retry history</button>}
+          </div>
         : !loaded
           ? <div role="status" className="grid min-h-[245px] place-items-center text-center text-sm text-slate-400">Loading {range} Alpaca account history…</div>
           : <PaperEquityChart points={displayedPoints} range={range}/>} 

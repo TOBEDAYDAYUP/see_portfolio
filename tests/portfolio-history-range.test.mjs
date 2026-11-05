@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {isPortfolioHistoryRange,portfolioHistoryRanges,portfolioHistoryRequestPath,
- portfolioHistoryResolution} from "../lib/alpaca/history-range.ts";
+ portfolioHistoryResolution,portfolioHistoryFallbackPath} from "../lib/alpaca/history-range.ts";
 
-const path=(range,createdAt)=>{
- const result=portfolioHistoryRequestPath(range,createdAt);
+const path=(range,createdAt,nowIso)=>{
+ const result=portfolioHistoryRequestPath(range,createdAt,nowIso);
  assert.ok(result);
  const url=new URL(result,"https://paper-api.alpaca.markets");
  return url.searchParams;
@@ -35,11 +35,29 @@ test("1M and 1Y use daily snapshots; annual Alpaca unit is A",()=>{
  assert.equal(portfolioHistoryResolution["1Y"],"Daily snapshots");
 });
 test("ALL is anchored at the actual account creation date, not 100 years",()=>{
- const all=path("ALL","2025-08-13T14:43:12.100Z");
+ const all=path("ALL","2025-08-13T14:43:12.100Z","2026-11-05T04:00:00.000Z");
  assert.equal(all.get("start"),"2025-08-13");
+ assert.equal(all.get("end"),"2026-11-05T04:00:00.000Z");
  assert.equal(all.get("timeframe"),"1D");
  assert.equal(all.has("period"),false);
  assert.equal(portfolioHistoryRequestPath("ALL"),null);
  assert.equal(portfolioHistoryRequestPath("ALL","invalid"),null);
  assert.equal(portfolioHistoryRequestPath("ALL","2025-99-99"),null);
+});
+
+test("ALL always has an explicit end, and rejects impossible future starts",()=>{
+ assert.equal(portfolioHistoryRequestPath("ALL","2027-01-01T00:00:00Z","2026-11-05T00:00:00Z"),null);
+ assert.equal(portfolioHistoryRequestPath("ALL","2025-02-30T00:00:00Z","2026-11-05T00:00:00Z"),null);
+ const p=path("ALL","2024-06-01T13:00:00Z","2026-11-05T00:00:00Z");
+ assert.equal(p.has("period"),false);
+ assert.ok(p.has("start")&&p.has("end"));
+});
+test("only unsupported intraday ranges can use lower-resolution Alpaca fallback",()=>{
+ const d=portfolioHistoryFallbackPath("1D");
+ const w=portfolioHistoryFallbackPath("1W");
+ assert.ok(d?.includes("timeframe=1H"));
+ assert.ok(w?.includes("timeframe=1D"));
+ assert.equal(portfolioHistoryFallbackPath("1M"),null);
+ assert.equal(portfolioHistoryFallbackPath("1Y"),null);
+ assert.equal(portfolioHistoryFallbackPath("ALL"),null);
 });
