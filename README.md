@@ -1,8 +1,22 @@
 # SEE Portfolio
 
-A lightweight investment research prototype built with **Next.js 16, React 19, TypeScript, and Tailwind CSS 4**.
+A lightweight investment research workspace built with **Next.js 16, React 19, TypeScript, and Tailwind CSS 4**.
 
 > **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
+
+## AI Assistant — optional DeepSeek integration
+
+The top-level AI Assistant workspace uses a server-only DeepSeek Chat Completions
+route. Set `DEEPSEEK_API_KEY` in `.env.local` to enable local chat; the browser
+never receives the key. The default is the current low-cost `deepseek-flash`
+model with thinking disabled and an 800-token response cap. `DEEPSEEK_MODEL` can
+override the model without changing client code.
+
+Because this app does not yet authenticate users, production chat is disabled by
+default even when a key exists. Add authentication and rate limiting, then set
+`DEEPSEEK_CHAT_ENABLED=true` to opt in. The assistant does not automatically read
+portfolio data and cannot place trades. Its output may be inaccurate and is not
+investment advice.
 
 ## Portfolio Returns v1 — Alpaca Paper reported P/L
 

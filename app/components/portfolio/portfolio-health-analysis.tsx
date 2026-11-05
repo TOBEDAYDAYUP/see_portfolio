@@ -103,7 +103,7 @@ export default function PortfolioHealthAnalysis({positionCount,fetchedAt}:Props)
    </button>}
   </div>
   {positionCount===0?<p className="my-auto rounded-xl border border-dashed border-white/15 px-4 py-9 text-center text-sm leading-6 text-slate-400">
-   No open positions. Add Paper holdings to see a real risk profile; no demo scores are generated.
+   No open positions. Add Paper holdings to see a real risk profile; no substitute scores are generated.
   </p>:<>
    {!currentRisk&&<p role="status" className="my-5 text-sm text-slate-400">Calculating portfolio risk profile…</p>}
    {riskMessage&&<p role="status" className="mt-5 rounded-xl border border-amber-400/20 p-3 text-xs leading-5 text-amber-200">

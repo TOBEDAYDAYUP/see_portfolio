@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SEE Portfolio | Investment Intelligence",
-  description: "A minimal portfolio and stock research workspace — prototype preview.",
+  description: "A portfolio, stock research, and AI-assisted investment intelligence workspace.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

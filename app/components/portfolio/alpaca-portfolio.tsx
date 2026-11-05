@@ -49,7 +49,7 @@ async function readPaperPortfolio(signal?: AbortSignal): Promise<AlpacaPortfolio
 function PositionsTable({positions}:{positions:AlpacaPosition[]}) {
   if(positions.length===0) return <div className="rounded-2xl border border-white/10 bg-[#172338] surface-panel p-8 text-center">
     <h3 className="font-semibold">No open paper positions</h3>
-    <p className="mt-2 text-sm text-slate-400">Your Alpaca account has no current holdings. This is real account data, not a demo list.</p>
+    <p className="mt-2 text-sm text-slate-400">Your Alpaca account has no current holdings. No synthetic positions are inserted.</p>
   </div>;
   return <section className="rounded-2xl border border-white/10 bg-[#172338] surface-panel overflow-hidden">
     <div className="flex items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
