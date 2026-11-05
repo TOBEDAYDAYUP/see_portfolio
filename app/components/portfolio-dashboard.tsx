@@ -20,7 +20,7 @@ export default function PortfolioDashboard({section,currency="USD",onSettings}:{
 }) {
   const [notice,setNotice]=useState("");
   return <div>
-    <div className={(section==="holdings"?"mb-3":"mb-7")+" flex flex-wrap items-end justify-between gap-4"}>
+    <div className={(section==="holdings"?"mb-0":"mb-7")+" flex flex-wrap items-end justify-between gap-4"}>
       <div>
         {section!=="holdings"&&<p className="mb-2 text-[11px] font-bold tracking-[.18em] text-[#87e5d1]">PORTFOLIO WORKSPACE</p>}
         <h1 className="text-3xl font-semibold sm:text-[38px]">My Portfolio</h1>
@@ -34,7 +34,7 @@ export default function PortfolioDashboard({section,currency="USD",onSettings}:{
      section==="dividends"?<PortfolioDividends/>:
      section==="returns"?<PortfolioReturns onSettings={onSettings}/>:
      section!=="holdings" ? <Soon section={section}/> : <>
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+      <div className="-mt-2 mb-2 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-xl font-semibold">Holdings overview</h2>
         </div>
