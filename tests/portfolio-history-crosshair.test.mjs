@@ -9,7 +9,7 @@ test("hit tolerance selects an actual observation on the curve",()=>{
  assert.equal(nearestHistoryObservation({x:100,y:150},line,24),0);
  assert.equal(nearestHistoryObservation({x:299,y:160},line,24),1);
  assert.equal(nearestHistoryObservation({x:450,y:105},line,24),2);
- assert.equal(nearestHistoryObservation({x:200,y:163},line,24),0);
+ assert.equal(nearestHistoryObservation({x:200,y:163},line,24),1); // midpoint snaps to later observation
 });
 test("a mouse near a line segment works without hitting a 3px stroke",()=>{
  // At the middle of the segment, 20 SVG units away, still selectable.
