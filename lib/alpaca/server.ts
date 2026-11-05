@@ -1,6 +1,6 @@
 import "server-only";
 import type { AlpacaPortfolioResult, AlpacaPosition, PortfolioHistoryPoint, AnnualPaperPerformance, PaperHistoryResponse } from "./types";
-import {portfolioHistoryRequestPath,portfolioHistoryResolution,type PortfolioHistoryRange} from "./history-range";
+import {portfolioHistoryRequestPath,portfolioHistoryFallbackPath,portfolioHistoryResolution,type PortfolioHistoryRange} from "./history-range";
 
 /** This application only permits the Alpaca PAPER host. No live trading host or order routes. */
 const PAPER_ORIGIN = "https://paper-api.alpaca.markets";
@@ -173,11 +173,23 @@ export async function loadPaperHistory(range:PortfolioHistoryRange):Promise<Pape
   }
   const path=portfolioHistoryRequestPath(range,createdAt);
   if(!path)return {status:"error",message:"Full account history is unavailable because the account start date is invalid."};
-  const raw=await alpacaGet(path,keyId,secretKey);
+  let raw:unknown;
+  let resolution=portfolioHistoryResolution[range];
+  try{
+   raw=await alpacaGet(path,keyId,secretKey);
+  }catch(error){
+   // The 1D / 1W intraday endpoints sometimes fail for newer paper
+   // accounts. Try a lower-resolution genuine Alpaca history request,
+   // never manufactured points, and disclose the resolution change.
+   const fallback=portfolioHistoryFallbackPath(range);
+   if(!(error instanceof AlpacaUpstreamError)||error.code!=="unavailable"||!fallback)throw error;
+   raw=await alpacaGet(fallback,keyId,secretKey);
+   resolution=range==="1W"?"Daily snapshots (fallback)":"Hourly snapshots (fallback)";
+  }
   if(!isObject(raw)||!Array.isArray(raw.timestamp)||!Array.isArray(raw.equity))
    throw new AlpacaUpstreamError("unavailable");
   const points=parseHistory(raw).sort((a,b)=>a.timestamp-b.timestamp);
-  return {status:"ok",range,points,resolution:portfolioHistoryResolution[range]};
+  return {status:"ok",range,points,resolution};
  }catch(error:unknown){
   const code=error instanceof AlpacaUpstreamError?error.code:"unavailable";
   const message=code==="auth_failed"
