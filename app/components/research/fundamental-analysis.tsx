@@ -2,6 +2,7 @@
 import { useEffect,useState } from "react";
 import type { FundamentalSnapshot,FundamentalsApiResponse } from "../../../lib/research/fundamentals-types";
 import ValuationAnalysis from "./valuation-analysis";
+import DCFAnalysis from "./dcf-analysis";
 
 const compactUSD=(num:number|null)=>{
  if(num===null||!Number.isFinite(num))return "—";
@@ -117,6 +118,9 @@ export default function FundamentalAnalysis({symbol,price,priceAsOf,priceSource}
    </p>}
   </div>}
  </section>
- {result?.status==="ok"&&<ValuationAnalysis data={result.data} price={price} priceAsOf={priceAsOf} priceSource={priceSource}/>}
+ {result?.status==="ok"&&<>
+  <ValuationAnalysis data={result.data} price={price} priceAsOf={priceAsOf} priceSource={priceSource}/>
+  <DCFAnalysis data={result.data} price={price} priceAsOf={priceAsOf} priceSource={priceSource}/>
+ </>}
  </>;
 }
