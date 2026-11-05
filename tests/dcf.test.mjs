@@ -13,14 +13,14 @@ test("flat cash flow and zero terminal growth equals a growing-perpetuity limit"
  assert.ok(Math.abs(result.estimatedEquityValueUsd-1000)<1e-8);
  assert.ok(Math.abs(result.estimatedValuePerShareUsd-100)<1e-8);
  assert.ok(Math.abs(result.upsideVsReferencePct-25)<1e-8);
- assert.equal(result.projectedYears.length,5);
+ assert.equal(result.projectedYears.length,1);
 });
-test("forecast cashflows discount individually and terminal value discounts at year five",()=>{
+test("year-one cash flow and terminal value both discount at year one",()=>{
  const r=calculateEquityCashFlowDCF(inputs({growthRatePct:5,terminalGrowthPct:2}));
  assert.ok(r);
  assert.ok(Math.abs(r.projectedYears[0].projectedCashFlowUsd-105)<1e-8);
  assert.ok(Math.abs(r.projectedYears[0].presentValueUsd-105/1.1)<1e-8);
- assert.ok(Math.abs(r.pvTerminalUsd-r.terminalValueAtYearFiveUsd/1.1**5)<1e-8);
+ assert.ok(Math.abs(r.pvTerminalUsd-r.terminalValueAtYearOneUsd/1.1)<1e-8);
  assert.ok(Math.abs(r.estimatedEquityValueUsd-r.pvForecastUsd-r.pvTerminalUsd)<1e-8);
 });
 test("cost of equity must exceed terminal growth by a percentage point",()=>{
@@ -44,4 +44,16 @@ test("higher cost of equity lowers modeled value",()=>{
  const b=calculateEquityCashFlowDCF(inputs({costOfEquityPct:12,terminalGrowthPct:2}));
  assert.ok(a&&b);
  assert.ok(a.estimatedValuePerShareUsd>b.estimatedValuePerShareUsd);
+});
+
+test("year-two and beyond are not explicit forecast rows",()=>{
+ const r=calculateEquityCashFlowDCF(inputs({growthRatePct:7,terminalGrowthPct:2}));
+ assert.ok(r);
+ assert.equal(r.projectedYears.length,1);
+ assert.equal(r.projectedYears[0].year,1);
+ const yearOne=107;
+ const terminalAtYearOne=yearOne*1.02/(0.10-0.02);
+ assert.ok(Math.abs(r.terminalValueAtYearOneUsd-terminalAtYearOne)<1e-8);
+ assert.ok(Math.abs(r.pvTerminalUsd-terminalAtYearOne/1.1)<1e-8);
+ assert.ok(r.terminalWeightPct>80);
 });
