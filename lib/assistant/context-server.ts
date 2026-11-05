@@ -65,6 +65,7 @@ export async function loadAssistantContext(messages:readonly AssistantChatMessag
   const latest=series.at(-1)??null,previous=series.at(-2)??null;
   const risk=series.length>1
     ?calculateRisk([{symbol,marketValue:100}],{[symbol]:series}):null;
+  const technicals=calculateAssistantTechnicals(series);
   let priceEvidenceId:string|undefined;
   let fundamentalsEvidenceId:string|undefined;
   let newsEvidenceId:string|undefined;
@@ -82,6 +83,11 @@ export async function loadAssistantContext(messages:readonly AssistantChatMessag
     "historical 1-day VaR95 "+val(risk?.var95Pct)+"%; "+
     "historical 1-day ES95 "+val(risk?.expectedShortfall95Pct)+"%; "+
     "valid daily returns "+val(risk?.dailyReturnObservations,0)+
+    "; SMA5 "+val(technicals.sma5)+"; SMA10 "+val(technicals.sma10)+
+    "; SMA20 "+val(technicals.sma20)+"; Wilder RSI14 "+val(technicals.rsi14)+
+    "; MACD histogram(12,26,9) "+val(technicals.macdHistogram,3)+
+    "; 5-session return "+val(technicals.return5Pct)+"%; 20-session return "+
+    val(technicals.return20Pct)+"%"+
     ". IEX historical daily closing prices are NOT a live consolidated quote. VaR/ES are in-sample estimates.");
   }
   if(hasSECContact()){
@@ -139,7 +145,7 @@ export async function loadAssistantContext(messages:readonly AssistantChatMessag
   stockAnalyses.push({
    symbol,asOf:latest?.date??null,
    lastCloseUSD:latest?.close??null,previousCloseUSD:previous?.close??null,
-   technicals:calculateAssistantTechnicals(series),risk:risk?{
+   technicals,risk:risk?{
     annualizedVolatilityPct:risk.annualizedVolatilityPct,
     maxDrawdownPct:risk.maxDrawdownPct,var95Pct:risk.var95Pct,
     expectedShortfall95Pct:risk.expectedShortfall95Pct,
