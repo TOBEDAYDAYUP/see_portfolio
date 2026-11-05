@@ -205,54 +205,103 @@ function HistoryChart({payload,mode,showVolume}:{
           setHover(next);
         }
       }}>
+      <defs>
+        <linearGradient id="marketAreaFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#26a69a" stopOpacity=".28"/>
+          <stop offset="100%" stopColor="#26a69a" stopOpacity=".02"/>
+        </linearGradient>
+      </defs>
+      {/* Chart price ticks are on the RIGHT, matching a trading terminal. */}
       {[0,.25,.5,.75,1].map(t=>{
         const yy=PRICE_TOP+t*(PRICE_BOTTOM-PRICE_TOP);
         return <g key={t}>
-          <line x1={L} y1={yy} x2={W-R} y2={yy} stroke="#8293a4" strokeDasharray="4 6" opacity=".32"/>
-          <text x={L-8} y={yy+4} textAnchor="end" fontSize="12" fill="#8599ac">{money(high-(high-low)*t)}</text>
+          <line x1={L} y1={yy} x2={W-R} y2={yy}
+            stroke="var(--market-grid)" strokeDasharray="4 5" strokeWidth="1"/>
+          <text x={W-R+10} y={yy+4} fontSize="12" fill="#8599ac"
+            className="market-axis-numeric">{formatPrice(high-(high-low)*t)}</text>
         </g>;
       })}
-      {mode==="line"&&<path d={path} stroke="#42bcae" strokeWidth="2.7" fill="none" strokeLinejoin="round" strokeLinecap="round"/>}
-      {mode!=="line"&&visible.map((bar,i)=>{
-        const xx=x(i),green=bar.close>=bar.open,color=green?"#32ac9c":"#db7890";
-        const yHigh=pricePosition(bar.high,low,high),yLow=pricePosition(bar.low,low,high);
-        const yOpen=pricePosition(bar.open,low,high),yClose=pricePosition(bar.close,low,high);
-        return <g key={bar.time}>
-          <line x1={xx} x2={xx} y1={yHigh} y2={yLow} stroke={color} strokeWidth={1.4}/>
-          {mode==="candles"
-            ? <rect x={xx-barWidth/2} y={Math.min(yOpen,yClose)} width={barWidth}
-                height={Math.max(1.5,Math.abs(yOpen-yClose))} fill={color}/>
+      {timelineTicks.map(index=><line key={"grid-"+index} x1={x(index)}
+        x2={x(index)} y1={PRICE_TOP} y2={showVolume?VOL_BOTTOM:PRICE_BOTTOM}
+        stroke="var(--market-grid)" opacity=".65" strokeWidth=".8"/>)}
+      {mode==="area"&&<path d={areaPath} fill="url(#marketAreaFill)"/>}
+      {(mode==="line"||mode==="area")&&<path d={path} stroke={candleUp}
+        strokeWidth="2.4" fill="none" strokeLinejoin="round" strokeLinecap="round"/>}
+      {mode!=="line"&&mode!=="area"&&visible.map((bar,i)=>{
+        const xx=x(i),previousClose=i>0?visible[i-1].close:null;
+        const isUp=mode==="hollow-candles"
+          ?marketCandleIsUp(bar,previousClose):bar.close>=bar.open;
+        const color=isUp?candleUp:candleDown;
+        const yHigh=pricePosition(bar.high,low,high);
+        const yLow=pricePosition(bar.low,low,high);
+        const yOpen=pricePosition(bar.open,low,high);
+        const yClose=pricePosition(bar.close,low,high);
+        const isCandle=mode==="candles"||mode==="hollow-candles";
+        return <g key={i}>
+          <line x1={xx} x2={xx} y1={yHigh} y2={yLow}
+            stroke={color} strokeWidth="1.4"/>
+          {isCandle
+            ? <rect x={xx-barWidth/2} y={Math.min(yOpen,yClose)}
+                width={barWidth} height={Math.max(1.5,Math.abs(yOpen-yClose))}
+                fill={mode==="hollow-candles"&&isHollowCandle(bar)?"transparent":color}
+                stroke={color} strokeWidth="1.25"/>
             : <>
-                <line x1={xx-barWidth/2} y1={yOpen} x2={xx} y2={yOpen} stroke={color} strokeWidth={1.4}/>
-                <line x1={xx} y1={yClose} x2={xx+barWidth/2} y2={yClose} stroke={color} strokeWidth={1.4}/>
+                {mode==="bars"&&<line x1={xx-barWidth/2} y1={yOpen}
+                  x2={xx} y2={yOpen} stroke={color} strokeWidth="1.5"/>}
+                <line x1={xx} y1={yClose} x2={xx+barWidth/2}
+                  y2={yClose} stroke={color} strokeWidth="1.5"/>
               </>}
         </g>;
       })}
       {showVolume&&<>
-        <line x1={L} x2={W-R} y1={VOL_BOTTOM} y2={VOL_BOTTOM} stroke="#8293a4" opacity=".4"/>
-        <text x={L-8} y={VOL_TOP+12} textAnchor="end" fontSize="12" fill="#8599ac">{compact(volMax)}</text>
-        <text x={L-8} y={VOL_BOTTOM} textAnchor="end" fontSize="12" fill="#8599ac">0</text>
-        {visible.map((bar,i)=><rect key={bar.time} x={x(i)-barWidth/2}
+        <line x1={L} x2={W-R} y1={VOL_BOTTOM} y2={VOL_BOTTOM}
+          stroke="var(--market-grid)" strokeWidth="1"/>
+        <text x={W-R+10} y={VOL_TOP+12} fontSize="12" fill="#8599ac">
+          {compact(volMax)}</text>
+        <text x={W-R+10} y={VOL_BOTTOM} fontSize="12" fill="#8599ac">0</text>
+        {visible.map((bar,i)=><rect key={i} x={x(i)-barWidth/2}
           y={VOL_BOTTOM-bar.volume/volMax*(VOL_BOTTOM-VOL_TOP)}
-          width={barWidth} height={Math.max(.5,bar.volume/volMax*(VOL_BOTTOM-VOL_TOP))}
-          fill={bar.close>=bar.open?"#59bdac":"#d7899c"} opacity=".8"/>)}
+          width={barWidth}
+          height={Math.max(.5,bar.volume/volMax*(VOL_BOTTOM-VOL_TOP))}
+          fill={bar.close>=bar.open?candleUp:candleDown} opacity=".52"/>)}
+      </>}
+      {timelineTicks.map((index,k)=><text key={"time-"+index}
+        x={x(index)} y={H-15} fontSize="11" fill="#879db0"
+        textAnchor={k===0?"start":k===timelineTicks.length-1?"end":"middle"}>
+        {timeLabel(density.buckets[index].lastTime,intraday)}
+      </text>)}
+      {/* Last completed source-bucket CLOSE, distinct from hover. Not a live quote. */}
+      {showLastPriceBadge&&<>
+        <line x1={L} x2={W-R} y1={latestY} y2={latestY}
+          stroke={latestColor} opacity=".7" strokeWidth="1" strokeDasharray="2 3"/>
+        <rect x={W-R+3} y={within(latestY-12,PRICE_TOP-1,PRICE_BOTTOM-24)}
+          width={R-8} height="24" rx="2" fill={latestColor}/>
+        <text x={W-R+(R-2)/2}
+          y={within(latestY-12,PRICE_TOP-1,PRICE_BOTTOM-24)+16}
+          fontSize="12" fontWeight="600" textAnchor="middle"
+          style={{fill:"#ffffff"}}>{formatPrice(latest.close)}</text>
       </>}
       {focused&&currentHover!==null&&<>
-        <line x1={x(currentHover)} x2={x(currentHover)} y1={PRICE_TOP} y2={showVolume?VOL_BOTTOM:PRICE_BOTTOM}
-          stroke="#a3b6ca" strokeDasharray="4 4" strokeWidth="1.2"/>
-        <line x1={x(currentHover)} x2={W-R} y1={pricePosition(focused.close,low,high)} y2={pricePosition(focused.close,low,high)}
-          stroke="#59bcb2" strokeDasharray="4 5" strokeWidth="1.1" opacity=".9"/>
-        <circle cx={x(currentHover)} cy={pricePosition(focused.close,low,high)}
-          r="4.5" fill="#f0fffa" stroke="#159b8d" strokeWidth="2" pointerEvents="none"/>
+        <line x1={cursorX} x2={cursorX} y1={PRICE_TOP}
+          y2={showVolume?VOL_BOTTOM:PRICE_BOTTOM}
+          stroke="#8b98a8" strokeDasharray="4 4" strokeWidth="1.1"/>
+        <line x1={L} x2={W-R} y1={cursorY} y2={cursorY}
+          stroke="#8b98a8" strokeDasharray="4 4" strokeWidth="1.1"/>
+        {/* Both tooltip labels stay INSIDE the SVG, never overlap browser edge. */}
+        <rect x={W-R+3} y={within(cursorY-12,PRICE_TOP-1,PRICE_BOTTOM-24)}
+          width={R-8} height="24" rx="2" fill="#17181d"/>
+        <text x={W-R+(R-2)/2}
+          y={within(cursorY-12,PRICE_TOP-1,PRICE_BOTTOM-24)+16}
+          fontSize="12" fontWeight="600" textAnchor="middle"
+          style={{fill:"#ffffff"}}>{formatPrice(focused.close)}</text>
+        <rect x={badgeX} y={H-34} width={timeBadgeWidth} height="27"
+          rx="2" fill="#17181d"/>
+        <text x={badgeX+timeBadgeWidth/2} y={H-16}
+          fontSize="12" fontWeight="600" textAnchor="middle"
+          style={{fill:"#ffffff"}}>{focusedDate}</text>
       </>}
-      <text x={L} y={H-17} fontSize="12" fill="#879db0">{timeLabel(visible[0].time,intraday)}</text>
-      <text x={W-R} y={H-17} fontSize="12" fill="#879db0" textAnchor="end">{timeLabel(density.buckets.at(-1)!.lastTime,intraday)}</text>
     </svg>
-    {currentHover!==null&&focused&&<>
-      <div className="chart-inspector-label chart-inspector-date pointer-events-none absolute z-50 whitespace-nowrap"
-        style={{left:(x(currentHover)/W*100)+"%"}}>
-        {inspectorDates}
-      </div>
+    </div>
       <div className="chart-inspector-label chart-inspector-value pointer-events-none absolute z-50 whitespace-nowrap"
         style={{left:((W-R)/W*100)+"%",top:(pricePosition(focused.close,low,high)/H*100)+"%"}}>
         {money(focused.close)}
