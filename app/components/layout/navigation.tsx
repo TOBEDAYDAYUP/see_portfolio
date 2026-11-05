@@ -46,9 +46,11 @@ export function SiteHeader({go,workspace,onWorkspaceChange}:{
       </div>
       {process.env.NODE_ENV==="production"&&<button type="button"
         onClick={async()=>{
-          try{await fetch("/api/private-preview/session",{method:"DELETE",cache:"no-store"});}finally{
-            window.location.assign("/private-preview");
-          }
+          try{
+            const response=await fetch("/api/private-preview/session",{method:"DELETE",cache:"no-store"});
+            if(response.ok)window.location.assign("/private-preview");
+            else window.alert("Sign-out did not complete. Please retry.");
+          }catch{window.alert("Sign-out did not complete. Please retry.");}
         }}
         className="shrink-0 rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-400 hover:text-white">
         Sign out
