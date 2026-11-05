@@ -92,6 +92,9 @@ export default function PaperEquityChart({points,range}:{points:PortfolioHistory
         <stop offset="0%" stopColor="#42bdb2" stopOpacity="0.31"/>
         <stop offset="100%" stopColor="#42bdb2" stopOpacity="0.01"/>
       </linearGradient></defs>
+      {/* Capture pointer events in the transparent space near the line, too. */}
+      <rect x={left} y={top} width={width-left-right} height={height-top-bottom}
+        fill="transparent" pointerEvents="all"/>
       {[0,0.5,1].map((ratio,i)=>{
         const y=top+ratio*(height-top-bottom);
         return <g key={i}><line x1={left} y1={y} x2={width-right} y2={y} stroke="#7790a4" strokeOpacity=".3" strokeDasharray="4 6"/><text x={left-10} y={y+4} textAnchor="end" fontSize="11" fill="#9aaabc">{dollar(high-(high-low)*ratio)}</text></g>;
