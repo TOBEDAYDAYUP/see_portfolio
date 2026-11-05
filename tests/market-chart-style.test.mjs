@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {MARKET_CHART_STYLES,isMarketChartStyle,
- isHollowCandle,marketCandleIsUp,inspectionBarTimestamp,marketTimeTickIndices}
+ isHollowCandle,marketCandleIsUp,inspectionBarTimestamp,marketTimeTickIndices,chartCursorPrice}
  from "../lib/research/market-chart-style.ts";
 
 test("exactly six requested trading chart styles with unique identifiers",()=>{
@@ -39,4 +39,13 @@ test("time ticks always refer to real existing bucket indices",()=>{
  assert.deepEqual(marketTimeTickIndices(1),[0]);
  assert.deepEqual(marketTimeTickIndices(0),[]);
  assert.deepEqual(marketTimeTickIndices(5,3),[0,2,4]);
+});
+
+test("crosshair price is the pointer Y-axis coordinate, not fabricated OHLC",()=>{
+ assert.equal(chartCursorPrice(20,100,200,20,120),200);
+ assert.equal(chartCursorPrice(70,100,200,20,120),150);
+ assert.equal(chartCursorPrice(120,100,200,20,120),100);
+ assert.equal(chartCursorPrice(5,100,200,20,120),200);
+ assert.equal(chartCursorPrice(170,100,200,20,120),100);
+ assert.equal(chartCursorPrice(50,100,200,20,20),null);
 });
