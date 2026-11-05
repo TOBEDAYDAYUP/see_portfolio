@@ -15,17 +15,22 @@ const historyPath="/v2/account/portfolio/history";
 /**
  * Match period and resolution to Alpaca's Portfolio History endpoint.
  * Alpaca denotes 1 year as 1A, not 1Y. An ALL query must be anchored
- * at the actual account creation date, never a fabricated number of years.
+ * at the actual account creation date and ends at now; never a fabricated number of years.
  */
 export function portfolioHistoryRequestPath(
- range:PortfolioHistoryRange,accountCreatedAt?:string,
+ range:PortfolioHistoryRange,accountCreatedAt?:string,nowIso=new Date().toISOString(),
 ):string|null {
  const params=new URLSearchParams();
  if(range==="ALL"){
   const date=accountCreatedAt?.slice(0,10);
   if(!date||!/^\d{4}-\d{2}-\d{2}$/.test(date)||
-     !Number.isFinite(Date.parse(date+"T00:00:00Z")))return null;
+     !Number.isFinite(Date.parse(date+"T00:00:00Z"))||
+     new Date(date+"T00:00:00Z").toISOString().slice(0,10)!==date||
+     !Number.isFinite(Date.parse(nowIso))||date>nowIso.slice(0,10))return null;
+  // Alpaca treats omitted end as a default period (often 1M), NOT all-time.
+  // Explicit start + end prevents accidental truncation of the ALL window.
   params.set("start",date);
+  params.set("end",nowIso);
   params.set("timeframe","1D");
  }else{
   const values={
