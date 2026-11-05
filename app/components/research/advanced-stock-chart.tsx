@@ -5,15 +5,18 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { CHART_RANGES } from "../../../lib/research/chart-utils";
 import { MIN_ZOOM_BARS, zoomChartViewport, panChartViewport, dragChartViewport, classifyChartWheel } from "../../../lib/research/chart-viewport";
 import { TARGET_VISIBLE_BARS, bucketVisibleChartBars } from "../../../lib/research/chart-density";
+import {MARKET_CHART_STYLES,isHollowCandle,marketCandleIsUp,marketTimeTickIndices,inspectionBarTimestamp,chartCursorPrice,type MarketChartStyle} from "../../../lib/research/market-chart-style";
 import type { ChartPayload, ChartRange } from "../../../lib/research/chart-utils";
 
-type Mode="candles"|"line"|"bars";
+type Mode=MarketChartStyle;
 type ChartResponse={status:"ok";data:ChartPayload}|{status:"error"|"not_configured";message:string};
 type Zoom={start:number;end:number};
 const money=(v:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2}).format(v);
 const compact=(v:number)=>new Intl.NumberFormat("en-US",{notation:"compact",maximumFractionDigits:1}).format(v);
-const W=1000,H=440,L=66,R=18,PRICE_TOP=25,PRICE_BOTTOM=302,VOL_TOP=335,VOL_BOTTOM=394;
+const W=1000,H=440,L=22,R=78,PRICE_TOP=28,PRICE_BOTTOM=302,VOL_TOP=335,VOL_BOTTOM=394;
 const usableW=W-L-R;
+const formatPrice=(v:number)=>v.toFixed(2);
+const candleUp="#26a69a",candleDown="#e04d64";
 function timeLabel(time:string,intraday:boolean){
   const dt=new Date(time);
   if(!Number.isFinite(dt.getTime()))return time;
@@ -40,6 +43,7 @@ function HistoryChart({payload,mode,showVolume}:{
   const bars=payload.bars;
   const [zoom,setZoom]=useState<Zoom|null>(null);
   const [hover,setHover]=useState<number|null>(null);
+  const [hoverY,setHoverY]=useState<number|null>(null);
   const chartRef=useRef<SVGSVGElement|null>(null);
   const zoomRef=useRef<Zoom|null>(null);
   const heldPointer=useRef<{id:number;lastX:number}|null>(null);
@@ -98,17 +102,24 @@ function HistoryChart({payload,mode,showVolume}:{
   const x=(i:number)=>L+usableW*(i+.5)/visible.length;
   const barWidth=Math.max(1,Math.min(12,usableW/visible.length*.72));
   const path=visible.map((bar,i)=>(i===0?"M":"L")+x(i).toFixed(2)+" "+pricePosition(bar.close,low,high).toFixed(2)).join(" ");
+  const areaPath=path+" L"+x(visible.length-1).toFixed(2)+" "+PRICE_BOTTOM+
+    " L"+x(0).toFixed(2)+" "+PRICE_BOTTOM+" Z";
+  const timelineTicks=marketTimeTickIndices(visible.length);
+  const latest=visible[visible.length-1];
+  const latestY=pricePosition(latest.close,low,high);
+  const latestColor=latest.close>=latest.open?candleUp:candleDown;
   const intraday=payload.interval==="5Min"||payload.interval==="15Min"||payload.interval==="30Min";
-  const focusedDates=focusedGroup
-    ? timeLabel(focusedGroup.firstTime,intraday)+
-      (focusedGroup.firstTime===focusedGroup.lastTime?"":" – "+timeLabel(focusedGroup.lastTime,intraday))
-    : "No history";
-  // For aggregated OHLCV buckets show the source interval, not a fake single
-  // trade timestamp. The value is the last source close in the bucket.
-  const inspectorDates=focusedGroup
-    ? inspectionTimestamp(focusedGroup.firstTime,intraday)+
-      (focusedGroup.firstTime===focusedGroup.lastTime?"":" – "+inspectionTimestamp(focusedGroup.lastTime,intraday))
-    : "";
+  // Use the LAST REAL underlying bar timestamp in each aggregated bucket.
+  // A bucket is an OHLC summary; we never claim its close happened at a midpoint.
+  const focusedDate=focusedGroup
+    ?inspectionTimestamp(inspectionBarTimestamp(focusedGroup),intraday)
+    :"No history";
+  const timeBadgeWidth=intraday?192:130;
+  const cursorX=currentHover===null?0:x(currentHover);
+  const badgeX=within(cursorX-timeBadgeWidth/2,L,W-R-timeBadgeWidth);
+  const cursorY=focused?(hoverY??pricePosition(focused.close,low,high)):0;
+  const cursorPrice=chartCursorPrice(cursorY,low,high,PRICE_TOP,PRICE_BOTTOM);
+  const showLastPriceBadge=currentHover===null||Math.abs(latestY-cursorY)>22;
   function canvasX(e:ReactPointerEvent<SVGSVGElement>):number{
     const bounds=e.currentTarget.getBoundingClientRect();
     return (e.clientX-bounds.left)/bounds.width*W;
@@ -124,6 +135,11 @@ function HistoryChart({payload,mode,showVolume}:{
   function onPointerMove(e:ReactPointerEvent<SVGSVGElement>){
     const xp=within(canvasX(e),L,W-R);
     setHover(within(Math.floor((xp-L)/usableW*visible.length),0,visible.length-1));
+    const pointerBounds=e.currentTarget.getBoundingClientRect();
+    if(pointerBounds.height>0){
+      const y=(e.clientY-pointerBounds.top)/pointerBounds.height*H;
+      setHoverY(y>=PRICE_TOP&&y<=PRICE_BOTTOM?y:null);
+    }
     const held=heldPointer.current;
     if(!held||held.id!==e.pointerId)return;
     // A released mouse button without pointerup (e.g. window focus change)
@@ -153,14 +169,14 @@ function HistoryChart({payload,mode,showVolume}:{
   }
   const badge="rounded-lg border border-white/15 px-2.5 py-1 text-xs font-medium text-slate-300 disabled:opacity-40";
   return <div>
-    <div className="mb-3 flex flex-wrap items-start justify-between gap-3 rounded-xl bg-[#1c2a40] px-3 py-3">
+    <div className="market-chart-toolbar mb-2 flex flex-wrap items-start justify-between gap-3 border-b border-white/10 px-1 py-2">
       <div className="min-w-0">
-        <p className="text-xs text-slate-400">{focusedDates} · {payload.interval} source · New York time</p>
+        <p className="text-xs text-slate-400">Historical {payload.interval} · New York time · {focusedGroup?.underlyingCount??0} source bars in selected bucket</p>
         {focused&&<div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold tabular-nums">
-          <span>O {money(focused.open)}</span><span>H {money(focused.high)}</span>
-          <span>L {money(focused.low)}</span><span>C {money(focused.close)}</span>
+          <span>O {formatPrice(focused.open)}</span><span>H {formatPrice(focused.high)}</span>
+          <span>L {formatPrice(focused.low)}</span><span>C {formatPrice(focused.close)}</span>
           <span className="text-slate-400">Vol {compact(focused.volume)}</span>
-          <span className="text-slate-400">{focusedGroup?.underlyingCount??0} source bars grouped</span>
+
         </div>}
       </div>
       <div className="flex flex-wrap gap-2">
@@ -178,80 +194,133 @@ function HistoryChart({payload,mode,showVolume}:{
         }}>→</button>
       </div>
     </div>
-    <div className="relative overflow-visible">
+    <div className="market-chart-frame relative overflow-hidden">
     <svg ref={chartRef} viewBox={"0 0 "+W+" "+H} role="img"
       aria-label={"Interactive "+payload.interval+" stock price and volume chart. Two-finger swipes scroll the page; pinch to zoom; when zoomed in, press and hold with one finger or the mouse button, then drag left or right to pan the timeline. No box selection."}
-      tabIndex={0} className={"w-full touch-pan-y select-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#7ce0cc] "+(isDragging?"cursor-grabbing":zoom?"cursor-grab":"cursor-crosshair")}
+      tabIndex={0} className={"market-price-canvas w-full touch-pan-y select-none outline-none focus-visible:ring-2 focus-visible:ring-[#7ce0cc] "+(isDragging?"cursor-grabbing":zoom?"cursor-grab":"cursor-crosshair")}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={stopDrag}
       onPointerCancel={stopDrag}
       onLostPointerCapture={stopDrag}
-      onPointerLeave={()=>{if(!heldPointer.current)setHover(null);}}
+      onPointerLeave={()=>{if(!heldPointer.current){setHover(null);setHoverY(null);}}}
       onKeyDown={e=>{
-        if(e.key==="Escape"){setZoom(null);setHover(null);}
+        if(e.key==="Escape"){setZoom(null);setHover(null);setHoverY(null);}
         if(e.key==="ArrowLeft"||e.key==="ArrowRight"){
           e.preventDefault();
           const next=within((currentHover??visible.length-1)+(e.key==="ArrowRight"?1:-1),0,visible.length-1);
           setHover(next);
         }
       }}>
+      <defs>
+        <linearGradient id="marketAreaFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#26a69a" stopOpacity=".28"/>
+          <stop offset="100%" stopColor="#26a69a" stopOpacity=".02"/>
+        </linearGradient>
+      </defs>
+      {/* Chart price ticks are on the RIGHT, matching a trading terminal. */}
       {[0,.25,.5,.75,1].map(t=>{
         const yy=PRICE_TOP+t*(PRICE_BOTTOM-PRICE_TOP);
         return <g key={t}>
-          <line x1={L} y1={yy} x2={W-R} y2={yy} stroke="#8293a4" strokeDasharray="4 6" opacity=".32"/>
-          <text x={L-8} y={yy+4} textAnchor="end" fontSize="12" fill="#8599ac">{money(high-(high-low)*t)}</text>
+          <line x1={L} y1={yy} x2={W-R} y2={yy}
+            stroke="var(--market-grid)" strokeDasharray="4 5" strokeWidth="1"/>
+          <text x={W-R+10} y={yy+4} fontSize="12" fill="#8599ac"
+            className="market-axis-numeric">{formatPrice(high-(high-low)*t)}</text>
         </g>;
       })}
-      {mode==="line"&&<path d={path} stroke="#42bcae" strokeWidth="2.7" fill="none" strokeLinejoin="round" strokeLinecap="round"/>}
-      {mode!=="line"&&visible.map((bar,i)=>{
-        const xx=x(i),green=bar.close>=bar.open,color=green?"#32ac9c":"#db7890";
-        const yHigh=pricePosition(bar.high,low,high),yLow=pricePosition(bar.low,low,high);
-        const yOpen=pricePosition(bar.open,low,high),yClose=pricePosition(bar.close,low,high);
-        return <g key={bar.time}>
-          <line x1={xx} x2={xx} y1={yHigh} y2={yLow} stroke={color} strokeWidth={1.4}/>
-          {mode==="candles"
-            ? <rect x={xx-barWidth/2} y={Math.min(yOpen,yClose)} width={barWidth}
-                height={Math.max(1.5,Math.abs(yOpen-yClose))} fill={color}/>
+      {timelineTicks.map(index=><line key={"grid-"+index} x1={x(index)}
+        x2={x(index)} y1={PRICE_TOP} y2={showVolume?VOL_BOTTOM:PRICE_BOTTOM}
+        stroke="var(--market-grid)" opacity=".65" strokeWidth=".8"/>)}
+      {mode==="area"&&<path d={areaPath} fill="url(#marketAreaFill)"/>}
+      {(mode==="line"||mode==="area")&&<path d={path} stroke={candleUp}
+        strokeWidth="2.4" fill="none" strokeLinejoin="round" strokeLinecap="round"/>}
+      {mode!=="line"&&mode!=="area"&&visible.map((bar,i)=>{
+        const xx=x(i),previousClose=i>0?visible[i-1].close:null;
+        const isUp=mode==="hollow-candles"
+          ?marketCandleIsUp(bar,previousClose):bar.close>=bar.open;
+        const color=isUp?candleUp:candleDown;
+        const yHigh=pricePosition(bar.high,low,high);
+        const yLow=pricePosition(bar.low,low,high);
+        const yOpen=pricePosition(bar.open,low,high);
+        const yClose=pricePosition(bar.close,low,high);
+        const isCandle=mode==="candles"||mode==="hollow-candles";
+        return <g key={i}>
+          <line x1={xx} x2={xx} y1={yHigh} y2={yLow}
+            stroke={color} strokeWidth="1.4"/>
+          {isCandle
+            ? <rect x={xx-barWidth/2} y={Math.min(yOpen,yClose)}
+                width={barWidth} height={Math.max(1.5,Math.abs(yOpen-yClose))}
+                fill={mode==="hollow-candles"&&isHollowCandle(bar)?"transparent":color}
+                stroke={color} strokeWidth="1.25"/>
             : <>
-                <line x1={xx-barWidth/2} y1={yOpen} x2={xx} y2={yOpen} stroke={color} strokeWidth={1.4}/>
-                <line x1={xx} y1={yClose} x2={xx+barWidth/2} y2={yClose} stroke={color} strokeWidth={1.4}/>
+                {mode==="bars"&&<line x1={xx-barWidth/2} y1={yOpen}
+                  x2={xx} y2={yOpen} stroke={color} strokeWidth="1.5"/>}
+                <line x1={xx} y1={yClose} x2={xx+barWidth/2}
+                  y2={yClose} stroke={color} strokeWidth="1.5"/>
               </>}
         </g>;
       })}
       {showVolume&&<>
-        <line x1={L} x2={W-R} y1={VOL_BOTTOM} y2={VOL_BOTTOM} stroke="#8293a4" opacity=".4"/>
-        <text x={L-8} y={VOL_TOP+12} textAnchor="end" fontSize="12" fill="#8599ac">{compact(volMax)}</text>
-        <text x={L-8} y={VOL_BOTTOM} textAnchor="end" fontSize="12" fill="#8599ac">0</text>
-        {visible.map((bar,i)=><rect key={bar.time} x={x(i)-barWidth/2}
+        <line x1={L} x2={W-R} y1={VOL_BOTTOM} y2={VOL_BOTTOM}
+          stroke="var(--market-grid)" strokeWidth="1"/>
+        <text x={W-R+10} y={VOL_TOP+12} fontSize="12" fill="#8599ac">
+          {compact(volMax)}</text>
+        <text x={W-R+10} y={VOL_BOTTOM} fontSize="12" fill="#8599ac">0</text>
+        {visible.map((bar,i)=><rect key={i} x={x(i)-barWidth/2}
           y={VOL_BOTTOM-bar.volume/volMax*(VOL_BOTTOM-VOL_TOP)}
-          width={barWidth} height={Math.max(.5,bar.volume/volMax*(VOL_BOTTOM-VOL_TOP))}
-          fill={bar.close>=bar.open?"#59bdac":"#d7899c"} opacity=".8"/>)}
+          width={barWidth}
+          height={Math.max(.5,bar.volume/volMax*(VOL_BOTTOM-VOL_TOP))}
+          fill={bar.close>=bar.open?candleUp:candleDown} opacity=".52"/>)}
+      </>}
+      {showVolume&&<g pointerEvents="none">
+        {/* Most recent completed bucket volume, not a streaming volume quote. */}
+        <rect x={W-R+3}
+          y={within(VOL_BOTTOM-latest.volume/volMax*(VOL_BOTTOM-VOL_TOP)-11,VOL_TOP,VOL_BOTTOM-22)}
+          width={R-8} height="22" rx="2" fill={latestColor}/>
+        <text x={W-R+(R-2)/2}
+          y={within(VOL_BOTTOM-latest.volume/volMax*(VOL_BOTTOM-VOL_TOP)-11,VOL_TOP,VOL_BOTTOM-22)+15}
+          textAnchor="middle" fontWeight="600" fontSize="12"
+          style={{fill:"#ffffff"}}>{compact(latest.volume)}</text>
+      </g>}
+      {timelineTicks.map((index,k)=><text key={"time-"+index}
+        x={x(index)} y={H-15} fontSize="11" fill="#879db0"
+        textAnchor={k===0?"start":k===timelineTicks.length-1?"end":"middle"}>
+        {timeLabel(density.buckets[index].lastTime,intraday)}
+      </text>)}
+      {/* Last completed source-bucket CLOSE, distinct from hover. Not a live quote. */}
+      {showLastPriceBadge&&<>
+        <line x1={L} x2={W-R} y1={latestY} y2={latestY}
+          stroke={latestColor} opacity=".7" strokeWidth="1" strokeDasharray="2 3"/>
+        <rect x={W-R+3} y={within(latestY-12,PRICE_TOP-1,PRICE_BOTTOM-24)}
+          width={R-8} height="24" rx="2" fill={latestColor}/>
+        <text x={W-R+(R-2)/2}
+          y={within(latestY-12,PRICE_TOP-1,PRICE_BOTTOM-24)+16}
+          fontSize="12" fontWeight="600" textAnchor="middle"
+          style={{fill:"#ffffff"}}>{formatPrice(latest.close)}</text>
       </>}
       {focused&&currentHover!==null&&<>
-        <line x1={x(currentHover)} x2={x(currentHover)} y1={PRICE_TOP} y2={showVolume?VOL_BOTTOM:PRICE_BOTTOM}
-          stroke="#a3b6ca" strokeDasharray="4 4" strokeWidth="1.2"/>
-        <line x1={x(currentHover)} x2={W-R} y1={pricePosition(focused.close,low,high)} y2={pricePosition(focused.close,low,high)}
-          stroke="#59bcb2" strokeDasharray="4 5" strokeWidth="1.1" opacity=".9"/>
-        <circle cx={x(currentHover)} cy={pricePosition(focused.close,low,high)}
-          r="4.5" fill="#f0fffa" stroke="#159b8d" strokeWidth="2" pointerEvents="none"/>
+        <line x1={cursorX} x2={cursorX} y1={PRICE_TOP}
+          y2={showVolume?VOL_BOTTOM:PRICE_BOTTOM}
+          stroke="#8b98a8" strokeDasharray="4 4" strokeWidth="1.1"/>
+        <line x1={L} x2={W-R} y1={cursorY} y2={cursorY}
+          stroke="#8b98a8" strokeDasharray="4 4" strokeWidth="1.1"/>
+        {/* Both tooltip labels stay INSIDE the SVG, never overlap browser edge. */}
+        <rect x={W-R+3} y={within(cursorY-12,PRICE_TOP-1,PRICE_BOTTOM-24)}
+          width={R-8} height="24" rx="2" fill="#17181d"/>
+        <text x={W-R+(R-2)/2}
+          y={within(cursorY-12,PRICE_TOP-1,PRICE_BOTTOM-24)+16}
+          fontSize="12" fontWeight="600" textAnchor="middle"
+          style={{fill:"#ffffff"}}>{formatPrice(cursorPrice??focused.close)}</text>
+        <rect x={badgeX} y={H-34} width={timeBadgeWidth} height="27"
+          rx="2" fill="#17181d"/>
+        <text x={badgeX+timeBadgeWidth/2} y={H-16}
+          fontSize="12" fontWeight="600" textAnchor="middle"
+          style={{fill:"#ffffff"}}>{focusedDate}</text>
       </>}
-      <text x={L} y={H-17} fontSize="12" fill="#879db0">{timeLabel(visible[0].time,intraday)}</text>
-      <text x={W-R} y={H-17} fontSize="12" fill="#879db0" textAnchor="end">{timeLabel(density.buckets.at(-1)!.lastTime,intraday)}</text>
     </svg>
-    {currentHover!==null&&focused&&<>
-      <div className="chart-inspector-label chart-inspector-date pointer-events-none absolute z-50 whitespace-nowrap"
-        style={{left:(x(currentHover)/W*100)+"%"}}>
-        {inspectorDates}
-      </div>
-      <div className="chart-inspector-label chart-inspector-value pointer-events-none absolute z-50 whitespace-nowrap"
-        style={{left:((W-R)/W*100)+"%",top:(pricePosition(focused.close,low,high)/H*100)+"%"}}>
-        {money(focused.close)}
-      </div>
-    </>}
     </div>
     <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
-      <span>{visible.length} / {TARGET_VISIBLE_BARS} candles · {density.rawCount} source bars · two-finger scrolls page · pinch to zoom · click-and-hold + drag ←→ to pan when zoomed</span>
+      <span>{visible.length} / {TARGET_VISIBLE_BARS} chart buckets · {density.rawCount} source bars · two-finger scroll · pinch to zoom · hold + drag ←→ to pan when zoomed</span>
       <span>{zoom?"Zoomed interval":"Full selected period"} · OHLCV aggregation</span>
     </div>
   </div>;
@@ -317,9 +386,9 @@ export default function AdvancedStockChart({symbol}:{symbol:string}){
         <select id="research-chart-style" value={mode}
           onChange={event=>setMode(event.target.value as Mode)}
           className="surface-field cursor-pointer rounded-lg border px-3 py-2 text-sm font-semibold">
-          <option value="candles">Candlesticks</option>
-          <option value="line">Line chart</option>
-          <option value="bars">OHLC bars</option>
+          {MARKET_CHART_STYLES.map(option=><option key={option.value} value={option.value}>
+            {option.label}
+          </option>)}
         </select>
       </label>
     </div>

@@ -36,6 +36,33 @@ In the same UI pass, the floating right-hand crosshair price badge is
 nudged left from the outer edge, and Research's light-theme sidebar is
 restored to the original blue that Portfolio uses.
 
+## Research stock charts — six trading-terminal renderers
+
+Research → Stock Reports → Price & Trading Volume now offers **six
+source-backed display modes**: Bars (OHLC open/close ticks), Candles
+(solid bodies), Hollow Candles (body hollow when close >= open; bar color
+based on current close vs previous bucket close), HLC (high/low/close,
+no open tick), Line (historical closes), and Line with Market Area
+(historical close line plus gradient area). Chart types share exactly
+the same real Alpaca OHLCV data and preserve existing bar bucketing,
+period choices, volume display and pinch-to-zoom / click-and-drag panning.
+
+Price ticks are on the **right** axis. Hovering the chart shows a
+dashed crosshair, with a compact black price label at the right axis
+for the **cursor's Y-axis level** (this is not a transaction price or
+a provider quote), and a black timestamp label on the **bottom** axis.
+Only ONE source timestamp is displayed: the **last real source bar time**
+represented in the selected aggregated bucket. The OHLC header remains
+the genuine high/low/open/close and total volume of that aggregate;
+its header explicitly indicates when multiple source bars were grouped.
+A green/red colored right-axis reference line denotes the close of the
+last available chart bucket, **not** a live bid/ask quote.
+
+The wider application's previous Geist webfonts have been replaced
+with native OS system sans; chart numbers use a consistent tabular
+Arial/Helvetica fallback. This is an original chart renderer and does
+not embed external chart-platform code or branding.
+
 ## Chart inspection overlays and light-theme readability
 
 The Portfolio equity chart retains its original **800 × 348 viewBox** and
@@ -46,12 +73,10 @@ they may overlap the surrounding card. Timestamp labels remain in
 New York exchange time, and USD values are sourced only from the
 selected actual Alpaca equity snapshot.
 
-Research → Stock Reports → Price & Trading Volume now has the same
-floating time and close-price labels for Candlesticks, Line and OHLC
-modes. The inspect date reflects the visible *bucket's* source interval
-when raw OHLCV bars were aggregated; the displayed close is the final
-source close for that bucket. Existing zoom, pan, volume and OHLC labels
-remain intact. No raw quotes or trades are invented.
+Research price charts now use the six trading-terminal display
+modes documented above, with compact native SVG crosshair labels along
+the bottom and right axes. Portfolio equity chart inspectors remain
+unchanged. Neither chart fabricates source prices, equity, or volume.
 
 In light mode, DCF assumptions use white, high-contrast input fields.
 The **Research** desktop sidebar is restored to the original blue
