@@ -100,7 +100,7 @@ export default function AlpacaPortfolio({currency,onSettings}:Props) {
   </div>;
 
   return <div>
-    <PortfolioOverview account={data.account} history={data.history} historyAvailable={data.historyAvailable} positionCount={data.positions.length}/>
+    <PortfolioOverview account={data.account} history={data.history} historyAvailable={data.historyAvailable} positionCount={data.positions.length} fetchedAt={data.fetchedAt}/>
     <div className="mb-5 mt-7 flex flex-wrap items-center justify-between gap-3">
       <div><span className="surface-pill rounded-full px-3 py-1.5 text-xs font-semibold">● Connected · Alpaca Paper</span><p className="mt-2 text-xs text-slate-500">Read-only · Account: {data.account.status || "unknown"} · Updated {new Date(data.fetchedAt).toLocaleTimeString("en-CA")}</p></div>
       <button disabled={refreshing} onClick={refresh} className="rounded-xl border border-white/15 bg-[#28384d] px-4 py-2.5 text-xs font-semibold text-slate-200">{refreshing?"Refreshing…":"↻ Refresh from Alpaca"}</button>

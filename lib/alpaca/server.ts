@@ -1,5 +1,6 @@
 import "server-only";
-import type { AlpacaPortfolioResult, AlpacaPosition, PortfolioHistoryPoint, AnnualPaperPerformance } from "./types";
+import type { AlpacaPortfolioResult, AlpacaPosition, PortfolioHistoryPoint, AnnualPaperPerformance, PaperHistoryResponse } from "./types";
+import {portfolioHistoryRequestPath,portfolioHistoryResolution,type PortfolioHistoryRange} from "./history-range";
 
 /** This application only permits the Alpaca PAPER host. No live trading host or order routes. */
 const PAPER_ORIGIN = "https://paper-api.alpaca.markets";
@@ -151,4 +152,38 @@ export async function loadPaperPortfolio(): Promise<AlpacaPortfolioResult> {
         : "Alpaca Paper API is temporarily unavailable. Check your connection and try again.";
     return { status: "error", code, message };
   }
+}
+
+/**
+ * Fetch just the selected chart window without reloading positions or placing
+ * orders. ALL starts at Alpaca's account creation date, not an invented period.
+ * Requires the same local-development-only route guard as account data.
+ */
+export async function loadPaperHistory(range:PortfolioHistoryRange):Promise<PaperHistoryResponse>{
+ const keyId=process.env.ALPACA_PAPER_KEY_ID?.trim();
+ const secretKey=process.env.ALPACA_PAPER_SECRET_KEY?.trim();
+ if(!keyId||!secretKey)return {status:"not_configured",message:"Configure Alpaca Paper credentials in .env.local."};
+ try{
+  let createdAt:string|undefined;
+  if(range==="ALL"){
+   const account=await alpacaGet("/v2/account",keyId,secretKey);
+   if(!isObject(account))throw new AlpacaUpstreamError("unavailable");
+   createdAt=textField(account,"created_at");
+   if(!createdAt)return {status:"error",message:"Alpaca did not return an account creation date; full history cannot be requested."};
+  }
+  const path=portfolioHistoryRequestPath(range,createdAt);
+  if(!path)return {status:"error",message:"Full account history is unavailable because the account start date is invalid."};
+  const raw=await alpacaGet(path,keyId,secretKey);
+  if(!isObject(raw)||!Array.isArray(raw.timestamp)||!Array.isArray(raw.equity))
+   throw new AlpacaUpstreamError("unavailable");
+  const points=parseHistory(raw).sort((a,b)=>a.timestamp-b.timestamp);
+  return {status:"ok",range,points,resolution:portfolioHistoryResolution[range]};
+ }catch(error:unknown){
+  const code=error instanceof AlpacaUpstreamError?error.code:"unavailable";
+  const message=code==="auth_failed"
+   ?"Alpaca rejected your paper credentials."
+   :code==="rate_limited"?"Alpaca history rate limit reached. Try again later."
+   :"Historical Alpaca account equity is temporarily unavailable.";
+  return {status:"error",message};
+ }
 }
