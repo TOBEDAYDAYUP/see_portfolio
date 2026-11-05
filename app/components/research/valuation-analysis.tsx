@@ -85,7 +85,7 @@ export default function ValuationAnalysis({data,price,priceAsOf,priceSource}:{
    </div>
   </details>
   <p className="mt-4 text-[11px] leading-5 text-slate-500">
-   Forward P/E, verified EV/EBITDA, peer benchmarking and DCF are not yet available.
+   Forward P/E, verified EV/EBITDA and peer benchmarking are not yet available. The separate DCF panel uses user-supplied assumptions and a simplified equity cash-flow proxy.
    Any reported N/M or missing ratio is intentional, not a predicted value.
   </p>
  </section>;
