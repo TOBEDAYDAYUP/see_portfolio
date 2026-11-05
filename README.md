@@ -4,6 +4,23 @@ A lightweight investment research prototype built with **Next.js 16, React 19, T
 
 > **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
 
+## Research Stock Search · Daily IEX price and change
+
+Research → Stock Search now adds **the latest available Alpaca IEX daily-session
+price**, plus **absolute USD price change and percentage change compared with
+the previous available IEX trading session**, next to each search result.
+Values are calculated in SEE Portfolio from Alpaca `dailyBar.c` and
+`prevDailyBar.c` using the batched `/v2/stocks/snapshots?feed=iex` API.
+
+The asset-directory search and quote loading are independent: missing or
+inaccessible quotes never prevent search, Watchlist or Stock Report navigation.
+Every displayed quote shows its NY trading-session date; weekends/holidays
+continue to show the previous session, **not a live consolidated market quote**.
+Missing, stale, inconsistent or future-dated bars are withheld. Up to 20 symbols
+are requested per batch, cached in memory for 25 seconds to conserve provider
+requests. Paper API credentials stay on the server; the new search-quotes
+endpoint remains local-development-only until authentication is implemented.
+
 ## Research DCF v0.1 — five-year equity cash-flow scenario model
 
 Research → Stock Reports → Company Fundamentals now includes an interactive
