@@ -4,6 +4,7 @@ import type { ResearchSearchQuote } from "./types";
 type RecordValue=Record<string,unknown>;
 const object=(x:unknown):x is RecordValue=>x!==null&&typeof x==="object"&&!Array.isArray(x);
 const validDate=(x:string)=>/^\d{4}-\d{2}-\d{2}$/.test(x)&&
+ Number.isFinite(Date.parse(x+"T00:00:00.000Z"))&&
  new Date(x+"T00:00:00.000Z").toISOString().slice(0,10)===x;
 
 /** Return the actual New York trading-session date, including DST transitions. */
@@ -40,7 +41,7 @@ export function parseAlpacaSearchSnapshots(raw:unknown,symbols:string[],
   if(!current||!previous||current.date<=previous.date)continue;
   const age=days(current.date,today);
   // Do not show obsolete/delisted symbols as the price today.
-  if(age<0||age>10)continue;
+  if(age<0||age>10||days(previous.date,current.date)>10)continue;
   const changeUSD=current.close-previous.close;
   const changePct=(changeUSD/previous.close)*100;
   if(!Number.isFinite(changeUSD)||!Number.isFinite(changePct))continue;
