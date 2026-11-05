@@ -127,7 +127,7 @@ export async function loadAssistantContext(messages:readonly AssistantChatMessag
    try{
     const articles=await loadResearchNews([symbol],4);
     if(articles.length){
-     stockNews=articles.slice(0,3).map(a=>({headline:a.headline,source:a.source,publishedAt:a.publishedAt}));
+     stockNews=articles.slice(0,3).map(a=>({headline:clean(a.headline),source:clean(a.source),publishedAt:a.publishedAt.slice(0,20)}));
      const titles=articles.slice(0,3).map(a=>
       clean(a.headline)+" ("+a.publishedAt.slice(0,16)+"; "+clean(a.source)+")").join(" | ");
      newsEvidenceId=add(symbol+" recent provider-tagged headlines","Alpaca News, publisher metadata",
