@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import type { ResearchAsset, ResearchResponse, StockReport } from "../../../lib/research/types";
 import ResearchNewsFeed from "./news-feed";
 import AdvancedStockChart from "./advanced-stock-chart";
+import StockRiskRadar from "./stock-risk-radar";
 import FundamentalAnalysis from "./fundamental-analysis";
 const money=(v:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2}).format(v);
 const pct=(v:number)=> (v>0?"+":"")+v.toFixed(2)+"%";
@@ -61,7 +62,10 @@ export default function StockReportView({symbol,asset:knownAsset,isFollowed,onFo
           <span className="text-xs text-slate-500">Last completed IEX historical daily bar · {report.asOf} · not a live quote</span>
         </div>
         <p className="mt-2 text-[11px] text-slate-500">The valuation and price above use the same IEX daily close; the interactive intraday chart may use delayed SIP consolidated bars and therefore show a different time or price. This is not a live consolidated quote.</p>
-        <AdvancedStockChart symbol={report.asset.symbol}/>
+        <div className="mt-5 grid items-stretch gap-4 xl:grid-cols-[minmax(0,2.3fr)_minmax(275px,1fr)]">
+          <div className="min-w-0"><AdvancedStockChart symbol={report.asset.symbol}/></div>
+          <StockRiskRadar symbol={report.asset.symbol} risk={report.risk} asOf={report.asOf}/>
+        </div>
       </div>}
     </section>
     {report&&<>

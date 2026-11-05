@@ -27,6 +27,35 @@ value over time** and **Portfolio health analysis** cards higher on desktop.
 The chart SVG viewBox, column widths, card sizes, metrics and data behavior
 are unchanged. Other Portfolio and Research pages retain their spacing.
 
+## Research Stock Report radar and consistent workspace navigation
+
+Stock Reports keep the existing price/volume chart unchanged but place it
+beside a five-axis **Stock Risk Profile** on wide desktop viewports; narrower
+screens automatically stack the cards. This panel reuses the individual
+stock's existing SEE-calculated annualized volatility, historical maximum
+drawdown, VaR95, ES95, plus historical sample depth. The 0–100 radar axes use
+explicit **illustrative reference thresholds** (not a calibrated investment
+rating); missing numbers never generate fake observations or a filled polygon.
+
+AI Assistant and Settings now share the same blue rounded left navigation
+used in Portfolio and Research. AI history is stored **in browser localStorage
+only**, capped at 24 conversations and 30 messages per conversation. Saved
+conversations can be selected, created or deleted from the sidebar; sensitive
+conversation data persists on shared devices until the user deletes it or
+clears the site's browser storage. There is no server-side history or
+cross-device sync. Settings category navigation shows existing preference
+panels without changing their underlying saved values. Mobile view uses
+horizontal section navigation.
+
+AI Assistant's input box and the user's own messages use lighter, accessible
+mint surfaces in both light and dark themes. The local Ollama model remains
+chosen with `OLLAMA_MODEL`; for a better small model, try
+`ollama pull qwen3.5:2b` and set `OLLAMA_MODEL=qwen3.5:2b`, then restart
+the development server. **A local model has no inherent live web connection**:
+optional web search requires separately configured retrieval tools such as
+Ollama's authenticated web search API; no arbitrary web browsing has been
+granted in this UI change.
+
 ## AI Assistant · grounded SEE Portfolio context v1
 
 The assistant can now answer supported **stock research** questions using

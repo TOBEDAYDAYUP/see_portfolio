@@ -2,21 +2,24 @@
 
 import { useState } from "react";
 import PortfolioDashboard from "./components/portfolio-dashboard";
-import { SiteHeader, Sidebar, ResearchSidebar, MobileNavigation } from "./components/layout/navigation";
+import {SiteHeader,Sidebar,ResearchSidebar,MobileNavigation,AssistantSidebar,SettingsSidebar,AssistantAndSettingsMobileNav} from "./components/layout/navigation";
 import ResearchWorkspace from "./components/research-workspace";
 import DailyBrief from "./components/brief/daily-brief";
 import SettingsPanel from "./components/settings/settings-panel";
 import AIAssistantWorkspace from "./components/assistant/ai-assistant-workspace";
 import { usePreferences } from "../hooks/use-preferences";
+import {useAssistantHistory} from "../hooks/use-assistant-history";
 import { stories } from "../lib/demo/market";
 import { portfolioLinks } from "../lib/navigation";
-import type { Page, PortfolioSection, ResearchSection, Workspace } from "../types/app";
+import type {Page,PortfolioSection,ResearchSection,SettingsSection,Workspace} from "../types/app";
 
 /** Thin UI composition layer; actual features live in their own modules. */
 export default function Home() {
   const [page,setPage] = useState<Page>("holdings");
   const [workspace,setWorkspace] = useState<Workspace>("portfolio");
   const [researchPage,setResearchPage] = useState<ResearchSection>("search");
+  const [settingsSection,setSettingsSection]=useState<SettingsSection>("overview");
+  const chats=useAssistantHistory();
   const prefs = usePreferences();
   const {watchlist,minimumScore,briefTone,briefTicker,notifications,delivery,currency,theme,t} = prefs;
   const related=stories.filter(s=>watchlist.includes(s.ticker)).sort((a,b)=>b.score-a.score);
@@ -32,14 +35,25 @@ export default function Home() {
     <div className="mx-auto flex min-h-[calc(100vh-72px)] max-w-[1600px]">
       {workspace==="portfolio"&&<Sidebar page={page} go={go} t={t}/>}
       {workspace==="research"&&<ResearchSidebar page={researchPage} go={goResearch} t={t}/>}
+      {workspace==="assistant"&&<AssistantSidebar threads={chats.threads} activeId={chats.activeId}
+        onSelect={chats.select} onNew={chats.start} onDelete={chats.remove} t={t}/>}
+      {workspace==="settings"&&<SettingsSidebar section={settingsSection}
+        onSectionChange={setSettingsSection} t={t}/>}
       <main className={"min-w-0 flex-1 px-5 pb-16 sm:px-7 lg:px-7 "+(workspace==="portfolio"&&page==="holdings"?"pt-3":"pt-7")}>
         {(workspace==="portfolio"||workspace==="research")&&<MobileNavigation page={page} go={go} t={t} workspace={workspace} researchPage={researchPage} goResearch={goResearch}/>}
+        {(workspace==="assistant"||workspace==="settings")&&<AssistantAndSettingsMobileNav
+          mode={workspace} threads={chats.threads} activeId={chats.activeId}
+          onSelect={chats.select} onNew={chats.start}
+          settingsSection={settingsSection} onSettingsSectionChange={setSettingsSection} t={t}/>}
         {workspace==="portfolio"&&page!=="holdings"&&page!=="analysis"&&<div className="mb-7 rounded-xl border border-slate-500/30 bg-[#1c2a40] surface-panel px-4 py-3 text-xs leading-5 text-slate-300"><strong className="text-[#a4f1df]">{t("Sample data notice.","示例数据说明。")}</strong> {t("Market figures and news in unfinished modules are fictional placeholders. No live AI scores or push notifications are connected yet.","未完成模块中的行情与新闻为虚构示例数据。尚未连接实时 AI 评分或实际消息推送。")}</div>}
         {workspace==="portfolio"&&portfolioLinks.some(link=>link.id===page)&&<PortfolioDashboard section={page as PortfolioSection} currency={currency} onSettings={()=>go("settings")}/>}
         {workspace==="portfolio"&&page==="brief"&&<DailyBrief prefs={prefs} go={go} briefItems={briefItems} relatedCount={related.length}/>}
         {workspace==="research"&&<ResearchWorkspace section={researchPage} t={t} navigate={goResearch}/>}
-        {workspace==="assistant"&&<AIAssistantWorkspace t={t}/>}
-        {workspace==="settings"&&<SettingsPanel prefs={prefs} go={go} notificationCount={notificationCount}/>}
+        {workspace==="assistant"&&<AIAssistantWorkspace key={chats.activeId} t={t}
+          threadId={chats.activeId} messages={chats.messages}
+          onAppend={chats.append} onNewChat={chats.start}/>}
+        {workspace==="settings"&&<SettingsPanel prefs={prefs} go={go}
+          section={settingsSection} notificationCount={notificationCount}/>}
         <footer className="mt-12 border-t border-white/10 pt-6 text-xs leading-6 text-slate-500">SEE Portfolio · {t("Paper trading is simulated. Unfinished research modules may use labeled sample data; not investment advice.","模拟盘交易不涉及真实资金。未完成的研究模块可能使用已标注的示例数据；不构成投资建议。")}</footer>
       </main>
     </div>

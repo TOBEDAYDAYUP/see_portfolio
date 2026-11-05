@@ -3,19 +3,21 @@
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import type { AssistantChatMessage } from "../../../lib/assistant/chat";
 import type {AssistantEvidence} from "../../../lib/assistant/context";
-type ChatWithSources=AssistantChatMessage&{evidence?:AssistantEvidence[];dataNotes?:string[]};
+import type {SavedAssistantMessage} from "../../../lib/assistant/chat-history";
 import type { Translator } from "../../../types/app";
 
 type ConnectionState = "checking" | "configured" | "unconfigured" | "error";
 
-export default function AIAssistantWorkspace({ t }: { t: Translator }) {
+export default function AIAssistantWorkspace({t,threadId,messages,onAppend,onNewChat}:{
+ t:Translator;threadId:string;messages:SavedAssistantMessage[];
+ onAppend:(threadId:string,message:SavedAssistantMessage)=>void;onNewChat:()=>void;
+}) {
   const connectionErrorText = t("Could not check the AI connection.", "无法检查 AI 连接。");
   const [connection, setConnection] = useState<ConnectionState>("checking");
   const [connectionMessage, setConnectionMessage] = useState("");
   const [model, setModel] = useState("deepseek-flash");
   const [provider, setProvider] = useState<"ollama" | "deepseek">("deepseek");
   const [connectionCheck, setConnectionCheck] = useState(0);
-  const [messages, setMessages] = useState<ChatWithSources[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -47,7 +49,7 @@ export default function AIAssistantWorkspace({ t }: { t: Translator }) {
     const cleanText = text.trim();
     if (!cleanText || sending || connection !== "configured") return;
     const nextMessages: AssistantChatMessage[] = [...messages, { role: "user", content: cleanText }];
-    setMessages(nextMessages);
+    onAppend(threadId,{role:"user",content:cleanText});
     setInput("");
     setError("");
     setSending(true);
@@ -71,9 +73,9 @@ export default function AIAssistantWorkspace({ t }: { t: Translator }) {
       }
       if (!response.ok || !data.message || typeof data.message === "string")
         throw new Error(typeof data.message === "string" ? data.message : t("The assistant could not answer.", "AI 助手暂时无法回答。"));
-      setMessages(current => [...current, {...data.message as AssistantChatMessage,
+      onAppend(threadId,{...data.message as AssistantChatMessage,
         evidence:Array.isArray(data.evidence)?data.evidence:[],
-        dataNotes:Array.isArray(data.dataNotes)?data.dataNotes:[]}]);
+        dataNotes:Array.isArray(data.dataNotes)?data.dataNotes:[]});
       if (data.model) setModel(data.model);
     } catch (error) {
       setError(error instanceof Error ? error.message : t("The assistant is temporarily unavailable.", "AI 助手暂时不可用。"));
@@ -135,7 +137,7 @@ export default function AIAssistantWorkspace({ t }: { t: Translator }) {
           <h2 className="text-sm font-semibold">{t("Research conversation", "研究对话")}</h2>
           <p className="mt-1 text-[11px] text-slate-500">{provider === "ollama" ? t("Local small model · answers may contain errors", "本地小模型 · 回答可能存在错误") : t("Low-cost non-thinking mode · answers may contain errors", "低成本非思考模式 · 回答可能存在错误")}</p>
         </div>
-        {messages.length > 0 && <button type="button" onClick={() => { setMessages([]); setError(""); }} disabled={sending} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5 disabled:opacity-50">{t("New chat", "新对话")}</button>}
+        {messages.length > 0 && <button type="button" onClick={() => { onNewChat(); setError(""); }} disabled={sending} className="rounded-lg border border-white/10 px-3 py-2 text-xs text-slate-300 hover:bg-white/5 disabled:opacity-50">{t("New chat", "新对话")}</button>}
       </div>
 
       <div className="flex-1 space-y-5 overflow-y-auto px-4 py-6 sm:px-7" aria-live="polite">
@@ -148,7 +150,7 @@ export default function AIAssistantWorkspace({ t }: { t: Translator }) {
           </div>
         </div>}
         {messages.map((message, index) => <div key={`${message.role}-${index}`} className={"flex "+(message.role === "user" ? "justify-end" : "justify-start")}>
-          <div className={"max-w-[88%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-6 sm:max-w-[76%] "+(message.role === "user" ? "rounded-br-md bg-[#2b635d] text-white" : "rounded-bl-md border border-white/10 bg-[#101d30] text-slate-200")}>
+          <div className={"max-w-[88%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-6 sm:max-w-[76%] "+(message.role === "user" ? "ai-user-bubble rounded-br-md" : "rounded-bl-md border border-white/10 bg-[#101d30] text-slate-200")}>
             {message.content}
             {message.role==="assistant"&&((message.evidence?.length??0)>0||(message.dataNotes?.length??0)>0)&&
               <details className="mt-3 whitespace-normal border-t border-white/10 pt-2 text-xs text-slate-400">
@@ -172,10 +174,10 @@ export default function AIAssistantWorkspace({ t }: { t: Translator }) {
         <div ref={endRef}/>
       </div>
 
-      <form onSubmit={submit} className="border-t border-white/10 bg-[#101b2d] p-4 sm:p-5">
+      <form onSubmit={submit} className="ai-chat-composer border-t border-white/10 p-4 sm:p-5">
         {error && <div className="mb-3 flex items-start justify-between gap-3 rounded-xl border border-rose-300/20 bg-rose-500/10 px-4 py-3 text-xs leading-5 text-rose-200" role="alert"><span>{error}</span><button type="button" aria-label="Dismiss error" onClick={() => setError("")}>×</button></div>}
         <div className="flex items-end gap-3">
-          <textarea value={input} onChange={event => setInput(event.target.value)} onKeyDown={handleKeyDown} disabled={!ready || sending} maxLength={4000} rows={2} placeholder={ready ? t("Ask a research question…", "输入研究问题…") : (provider === "ollama" ? t("Start local Ollama to chat", "启动本地 Ollama 后开始对话") : t("Connect DeepSeek to start chatting", "连接 DeepSeek 后开始对话"))} aria-label={t("Message AI Assistant", "给 AI 助手发送消息")} className="surface-field min-h-[52px] flex-1 resize-none rounded-xl border px-4 py-3 text-sm leading-6 placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"/>
+          <textarea value={input} onChange={event => setInput(event.target.value)} onKeyDown={handleKeyDown} disabled={!ready || sending} maxLength={4000} rows={2} placeholder={ready ? t("Ask a research question…", "输入研究问题…") : (provider === "ollama" ? t("Start local Ollama to chat", "启动本地 Ollama 后开始对话") : t("Connect DeepSeek to start chatting", "连接 DeepSeek 后开始对话"))} aria-label={t("Message AI Assistant", "给 AI 助手发送消息")} className="ai-chat-input min-h-[52px] flex-1 resize-none rounded-xl border px-4 py-3 text-sm leading-6 placeholder:text-slate-500 disabled:cursor-not-allowed disabled:opacity-60"/>
           <button type="submit" disabled={!ready || sending || !input.trim()} className="h-[52px] rounded-xl bg-[#83e3cd] px-5 text-sm font-bold text-[#102139] transition hover:bg-[#a5f4e2] disabled:cursor-not-allowed disabled:opacity-45">{sending ? "…" : t("Send", "发送")}</button>
         </div>
         <p className="mt-3 text-center text-[10px] leading-4 text-slate-500">{t("AI output is educational and may be inaccurate. Verify important facts independently; this is not investment advice.", "AI 输出仅供学习参考，可能不准确。重要事实请独立核实；这不构成投资建议。")}</p>

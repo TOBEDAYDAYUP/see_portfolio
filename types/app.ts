@@ -1,3 +1,4 @@
+export type SettingsSection = "overview"|"connection"|"appearance"|"notifications"|"regional"|"brief"|"watchlist";
 export type PortfolioSection = "holdings"|"analysis"|"valuations"|"dividends"|"returns"|"updates";
 export type Page = PortfolioSection | "brief" | "settings";
 export type Workspace = "portfolio" | "research" | "assistant" | "settings";
