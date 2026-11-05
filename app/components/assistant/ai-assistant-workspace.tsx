@@ -4,6 +4,7 @@ import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import type { AssistantChatMessage } from "../../../lib/assistant/chat";
 import type {AssistantEvidence} from "../../../lib/assistant/context";
 import type {SavedAssistantMessage} from "../../../lib/assistant/chat-history";
+import QuantReportMessage from "./quant-report-message";
 import type { Translator } from "../../../types/app";
 
 type ConnectionState = "checking" | "configured" | "unconfigured" | "error";
@@ -153,7 +154,9 @@ export default function AIAssistantWorkspace({t,threadId,messages,onAppend,onNew
         {messages.map((message, index) => <div key={`${message.role}-${index}`} className={"flex "+(message.role === "user" ? "justify-end" : "justify-start")}>
           <div className={"max-w-[94%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-7 "+(message.format==="see_quant_v1"?"sm:max-w-[95%] ":"sm:max-w-[76%] ")+(message.role === "user" ? "ai-user-bubble rounded-br-md" : "rounded-bl-md border border-white/10 bg-[#101d30] text-slate-200")}>
             {message.format==="see_quant_v1"&&<p className="mb-3 border-b border-white/10 pb-2 text-[11px] font-semibold tracking-wide text-[#188976]">SEE Quant · Source-backed Report</p>}
-            {message.content}
+            {message.format==="see_quant_v1"
+              ?<QuantReportMessage content={message.content}/>
+              :message.content}
             {message.role==="assistant"&&((message.evidence?.length??0)>0||(message.dataNotes?.length??0)>0)&&
               <details className="mt-3 whitespace-normal border-t border-white/10 pt-2 text-xs text-slate-400">
                 <summary className="cursor-pointer font-semibold">
