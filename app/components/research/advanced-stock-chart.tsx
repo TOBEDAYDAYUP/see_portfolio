@@ -5,7 +5,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { CHART_RANGES } from "../../../lib/research/chart-utils";
 import { MIN_ZOOM_BARS, zoomChartViewport, panChartViewport, dragChartViewport, classifyChartWheel } from "../../../lib/research/chart-viewport";
 import { TARGET_VISIBLE_BARS, bucketVisibleChartBars } from "../../../lib/research/chart-density";
-import {MARKET_CHART_STYLES,isHollowCandle,marketCandleIsUp,marketTimeTickIndices,inspectionBarTimestamp,type MarketChartStyle} from "../../../lib/research/market-chart-style";
+import {MARKET_CHART_STYLES,isHollowCandle,marketCandleIsUp,marketTimeTickIndices,inspectionBarTimestamp,chartCursorPrice,type MarketChartStyle} from "../../../lib/research/market-chart-style";
 import type { ChartPayload, ChartRange } from "../../../lib/research/chart-utils";
 
 type Mode=MarketChartStyle;
@@ -43,6 +43,7 @@ function HistoryChart({payload,mode,showVolume}:{
   const bars=payload.bars;
   const [zoom,setZoom]=useState<Zoom|null>(null);
   const [hover,setHover]=useState<number|null>(null);
+  const [hoverY,setHoverY]=useState<number|null>(null);
   const chartRef=useRef<SVGSVGElement|null>(null);
   const zoomRef=useRef<Zoom|null>(null);
   const heldPointer=useRef<{id:number;lastX:number}|null>(null);
@@ -116,7 +117,8 @@ function HistoryChart({payload,mode,showVolume}:{
   const timeBadgeWidth=intraday?192:130;
   const cursorX=currentHover===null?0:x(currentHover);
   const badgeX=within(cursorX-timeBadgeWidth/2,L,W-R-timeBadgeWidth);
-  const cursorY=focused?pricePosition(focused.close,low,high):0;
+  const cursorY=focused?(hoverY??pricePosition(focused.close,low,high)):0;
+  const cursorPrice=chartCursorPrice(cursorY,low,high,PRICE_TOP,PRICE_BOTTOM);
   const showLastPriceBadge=currentHover===null||Math.abs(latestY-cursorY)>22;
   function canvasX(e:ReactPointerEvent<SVGSVGElement>):number{
     const bounds=e.currentTarget.getBoundingClientRect();
@@ -133,6 +135,11 @@ function HistoryChart({payload,mode,showVolume}:{
   function onPointerMove(e:ReactPointerEvent<SVGSVGElement>){
     const xp=within(canvasX(e),L,W-R);
     setHover(within(Math.floor((xp-L)/usableW*visible.length),0,visible.length-1));
+    const bounds=e.currentTarget.getBoundingClientRect();
+    if(bounds.height>0){
+      const y=(e.clientY-bounds.top)/bounds.height*H;
+      setHoverY(y>=PRICE_TOP&&y<=PRICE_BOTTOM?y:null);
+    }
     const held=heldPointer.current;
     if(!held||held.id!==e.pointerId)return;
     // A released mouse button without pointerup (e.g. window focus change)
@@ -196,9 +203,9 @@ function HistoryChart({payload,mode,showVolume}:{
       onPointerUp={stopDrag}
       onPointerCancel={stopDrag}
       onLostPointerCapture={stopDrag}
-      onPointerLeave={()=>{if(!heldPointer.current)setHover(null);}}
+      onPointerLeave={()=>{if(!heldPointer.current){setHover(null);setHoverY(null);}}}
       onKeyDown={e=>{
-        if(e.key==="Escape"){setZoom(null);setHover(null);}
+        if(e.key==="Escape"){setZoom(null);setHover(null);setHoverY(null);}
         if(e.key==="ArrowLeft"||e.key==="ArrowRight"){
           e.preventDefault();
           const next=within((currentHover??visible.length-1)+(e.key==="ArrowRight"?1:-1),0,visible.length-1);
@@ -293,7 +300,7 @@ function HistoryChart({payload,mode,showVolume}:{
         <text x={W-R+(R-2)/2}
           y={within(cursorY-12,PRICE_TOP-1,PRICE_BOTTOM-24)+16}
           fontSize="12" fontWeight="600" textAnchor="middle"
-          style={{fill:"#ffffff"}}>{formatPrice(focused.close)}</text>
+          style={{fill:"#ffffff"}}>{formatPrice(cursorPrice??focused.close)}</text>
         <rect x={badgeX} y={H-34} width={timeBadgeWidth} height="27"
           rx="2" fill="#17181d"/>
         <text x={badgeX+timeBadgeWidth/2} y={H-16}
