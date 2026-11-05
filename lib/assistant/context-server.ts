@@ -221,6 +221,6 @@ export async function loadAssistantContext(messages:readonly AssistantChatMessag
    }else notes.push("Alpaca Paper account is not currently connected; no holdings were assumed.");
   }
  }
- if(!evidence.length)notes.push("No verified SEE Portfolio market/portfolio facts were retrieved for this question. Do not claim otherwise.");
+ if(!evidence.length&&(symbols.length>0||needs.portfolio))notes.push("No verified SEE Portfolio market/portfolio facts were retrieved for this question. Do not claim otherwise.");
  return {evidence:evidence.slice(0,8),notes:notes.slice(0,5),stockAnalyses};
 }
