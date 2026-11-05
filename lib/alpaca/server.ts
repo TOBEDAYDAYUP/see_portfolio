@@ -2,6 +2,7 @@ import "server-only";
 import type { AlpacaPortfolioResult, AlpacaPosition, PortfolioHistoryPoint, AnnualPaperPerformance, PaperHistoryResponse } from "./types";
 import {portfolioHistoryRequestPath,portfolioHistoryFallbackPath,portfolioHistoryResolution,type PortfolioHistoryRange} from "./history-range";
 import {lastFiveMarketSessions} from "./history-display";
+import {parseReturnsHistory} from "../portfolio/returns";
 
 /** This application only permits the Alpaca PAPER host. No live trading host or order routes. */
 const PAPER_ORIGIN = "https://paper-api.alpaca.markets";
@@ -193,7 +194,8 @@ export async function loadPaperHistory(range:PortfolioHistoryRange):Promise<Pape
   // 5D means five actual NY market sessions. We deliberately fetched a longer
   // calendar window so weekends/holidays don't shorten the five sessions.
   const points=range==="5D"?lastFiveMarketSessions(allPoints):allPoints;
-  return {status:"ok",range,points,resolution};
+  const pnlPoints=parseReturnsHistory(raw,new Set(points.map(point=>point.timestamp)));
+  return {status:"ok",range,points,resolution,pnlPoints};
  }catch(error:unknown){
   const code=error instanceof AlpacaUpstreamError?error.code:"unavailable";
   const message=code==="auth_failed"
