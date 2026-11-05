@@ -1,6 +1,6 @@
 export type PortfolioSection = "holdings"|"analysis"|"valuations"|"dividends"|"returns"|"updates";
 export type Page = PortfolioSection | "brief" | "settings";
-export type Workspace = "portfolio" | "research";
+export type Workspace = "portfolio" | "research" | "assistant" | "settings";
 export type ResearchSection = "search" | "watchlist" | "reports" | "news";
 export type Currency = "USD" | "CNY";
 export type Theme = "dark" | "light";

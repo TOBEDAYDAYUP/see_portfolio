@@ -142,7 +142,7 @@ export default function RiskAnalysis({onSettings}:{onSettings:()=>void}){
       <h3 className="text-xl font-semibold">No open paper positions</h3>
       <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-400">
         Your Alpaca Paper portfolio currently has no holdings. Weight, concentration, volatility, VaR, ES and drawdown
-        will be calculated when qualifying US stock positions are present. No demo risk figures are displayed.
+        will be calculated when qualifying US stock positions are present. No substitute risk figures are displayed.
       </p>
       <span className="mt-5 inline-block rounded-full border border-white/10 px-4 py-2 text-xs text-slate-400">Alpaca Paper · connected</span>
     </div>}
