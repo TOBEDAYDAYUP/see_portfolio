@@ -55,7 +55,7 @@ export default function DCFAnalysis({data,price,priceAsOf,priceSource}:{
  const annualFCF=fyOK?data.freeCashFlowUsd:null;
  const base=current.ttmFCF!==null?current.ttmFCF:annualFCF;
  const source=current.ttmFCF!==null?"SEC TTM ending "+(current.ttmEnd??"—"):
-  fyOK?"SEC fiscal year ending "+latest.fiscalYearEnd:"Not available";
+  fyOK?"SEC fiscal year ending "+(latest?.fiscalYearEnd??"—"):"Not available";
  const shares=current.sharesOutstanding;
  const available=base!==null&&base>0&&shares!==null&&shares>0;
  const assumptions={baseCashFlowUsd:base??0,sharesOutstanding:shares??0,
