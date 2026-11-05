@@ -4,6 +4,35 @@ A lightweight investment research prototype built with **Next.js 16, React 19, T
 
 > **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
 
+## Portfolio Returns v1 — Alpaca Paper reported P/L
+
+Portfolio → Returns now uses **real Alpaca Paper data** only. It requests
+the selected 1D / 5D / 1M / 1Y / ALL history and pairs the timestamps,
+equity values and `profit_loss` fields returned by the Alpaca portfolio
+history endpoint. For the graph, each observation is the **change in
+broker-reported P/L since the first valid visible snapshot**; it is not a
+fabricated price or broker-independent performance estimate. Each selected
+range reflects the actual observations available from Alpaca, and 5D
+continues to mean the latest five observed NY trading sessions. The
+interface also displays account equity, the total current unrealized P/L
+from Alpaca's open positions, a diagnostic P/L movement relative to
+opening equity, and a per-position P/L table. When no trade has settled,
+there are honest empty states. Refresh re-reads the paper account.
+
+**Accounting limitation:** Alpaca's reported P/L and changes in account
+equity can reflect deposits, withdrawals, resets and other account flows.
+The displayed percentage is P/L change divided by the first visible
+snapshot's account equity. It is **not** a cash-flow-adjusted
+time-weighted return (TWR), money-weighted return (IRR), or realized
+closed-trade gain. Accurate realized gains require a complete fill and
+corporate-action ledger. Unavailable fields remain unavailable, not zero.
+DCF estimates an issuer's modeled equity value based on assumptions and
+is unrelated to calculation of realized account performance.
+
+In the same UI pass, the floating right-hand crosshair price badge is
+nudged left from the outer edge, and Research's light-theme sidebar is
+restored to the original blue that Portfolio uses.
+
 ## Chart inspection overlays and light-theme readability
 
 The Portfolio equity chart retains its original **800 × 348 viewBox** and
@@ -22,9 +51,8 @@ source close for that bucket. Existing zoom, pan, volume and OHLC labels
 remain intact. No raw quotes or trades are invented.
 
 In light mode, DCF assumptions use white, high-contrast input fields.
-Only the **Research** desktop sidebar changes to a very pale mint with
-dark text and distinct selection/hover states; the Portfolio sidebar
-and dark-theme styling stay as before.
+The **Research** desktop sidebar is restored to the original blue
+used by Portfolio in both themes; DCF inputs remain high-contrast.
 
 ## Portfolio equity chart · selectable history windows
 
