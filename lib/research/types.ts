@@ -5,6 +5,16 @@ export type ResearchAsset = {
   exchange: string;
   tradable: boolean;
 };
+/** A dated IEX daily-session price, not a live consolidated quote. */
+export type ResearchSearchQuote = {
+  symbol: string;
+  priceUSD: number;
+  changeUSD: number;
+  changePct: number;
+  sessionDate: string;
+  previousSessionDate: string;
+  source: "Alpaca IEX";
+};
 export type ResearchArticle = {
   id: string;
   symbol: string;
