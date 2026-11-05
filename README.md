@@ -27,7 +27,21 @@ The chart preserves honest missing-data states. Fewer than two snapshots
 means no line is drawn. The X axis uses five labels from actual observations (first, three interior
 timestamps, last), or fewer if the API has fewer observations. 5D uses one
 timestamp from each observed trading session, with no empty weekend slot.
-The 1D chart labels its X axis in New York trading time. All account-history API routes remain local-development-only pending
+The 1D chart labels its X axis in New York trading time.
+
+**Interactive equity crosshair:** Hover within 24 screen pixels of the
+historical equity line (or click/tap near it) to select the nearest *actual*
+Alpaca snapshot. The chart draws a dashed vertical line to the top timestamp
+label and a dashed horizontal line to the right-hand USD account-equity label.
+Timestamp labels use New York market time with automatic EST/EDT handling.
+Clicks pin/unpin a selected observation; hover previews disappear on pointer
+leave. Keyboard users can focus the chart, navigate real observations with
+left/right arrows (Home/End supported), and press Escape to clear selection.
+No interpolated/fabricated portfolio equity is displayed; sparse lines snap
+to an existing observation rather than claiming intermediate values.
+The original 3 Y-axis ticks and 5 X-axis date labels remain visible.
+
+All account-history API routes remain local-development-only pending
 authentication; requests do not place trades and never expose paper keys.
 Historical equity changes can include deposits and withdrawals and are
 not time-weighted investment returns.
