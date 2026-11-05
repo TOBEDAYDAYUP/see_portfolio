@@ -26,7 +26,13 @@ export default function PortfolioDashboard({section,currency="USD",onSettings}:{
         <h1 className={"text-3xl font-semibold sm:text-[38px]"+(section==="holdings"?" relative top-[10px]":"")}>My Portfolio</h1>
         {section!=="holdings"&&<p className="mt-2 text-sm text-slate-400">{section==="analysis"?"Risk analytics for your Alpaca Paper positions":labels[section]}</p>}
       </div>
-      <span className="surface-pill rounded-full px-3 py-2 text-xs">{["holdings","analysis","valuations","dividends","returns"].includes(section)?"ALPACA · PAPER":"SAMPLE DATA"}</span>
+      {section==="holdings" ? (
+        <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
+          <span className="surface-pill rounded-full px-3 py-2 text-xs">ALPACA · PAPER</span>
+          <button type="button" onClick={()=>setNotice("Transaction entry is under development.")} className="rounded-xl bg-[#83e3cd] px-4 py-2.5 text-xs font-bold text-[#122239]">＋ Add transaction</button>
+          <button type="button" onClick={()=>setNotice("Holdings editing is under development.")} className="rounded-xl border border-white/10 bg-[#28384d] px-3 py-2.5 text-xs text-slate-200">Edit holdings</button>
+        </div>
+      ) : <span className="surface-pill rounded-full px-3 py-2 text-xs">{["analysis","valuations","dividends","returns"].includes(section)?"ALPACA · PAPER":"SAMPLE DATA"}</span>}
     </div>
 
     {section==="analysis" ? <RiskAnalysis onSettings={onSettings}/> :
@@ -34,12 +40,6 @@ export default function PortfolioDashboard({section,currency="USD",onSettings}:{
      section==="dividends"?<PortfolioDividends/>:
      section==="returns"?<PortfolioReturns onSettings={onSettings}/>:
      section!=="holdings" ? <Soon section={section}/> : <>
-      <div className="-mt-2 mb-2 flex flex-wrap items-center justify-end gap-3">
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={()=>setNotice("Transaction entry is under development.")} className="rounded-xl bg-[#83e3cd] px-4 py-2.5 text-xs font-bold text-[#122239]">＋ Add transaction</button>
-          <button type="button" onClick={()=>setNotice("Holdings editing is under development.")} className="rounded-xl border border-white/10 bg-[#28384d] px-3 py-2.5 text-xs text-slate-200">Edit holdings</button>
-        </div>
-      </div>
       {notice&&<div role="status" className="mb-4 flex justify-between rounded-xl bg-[#1e423f] px-4 py-3 text-sm text-emerald-100"><span>{notice}</span><button type="button" aria-label="Dismiss notice" onClick={()=>setNotice("")}>×</button></div>}
       <AlpacaPortfolio currency={currency} onSettings={onSettings}/>
     </>}
