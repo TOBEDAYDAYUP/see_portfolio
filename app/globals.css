@@ -440,8 +440,8 @@ body {
   transform: translate(-50%, -50%);
 }
 .chart-inspector-value {
-  /* Keep the right-hand price badge safely INSIDE the chart's plot edge. */
-  transform: translate(calc(-100% - 12px), -50%);
+  /* Recenter price badges slightly inward, leaving room to the screen edge. */
+  transform: translate(-75%, -50%);
 }
 .see-shell[data-theme="light"] .chart-inspector-label {
   color: #101820;
