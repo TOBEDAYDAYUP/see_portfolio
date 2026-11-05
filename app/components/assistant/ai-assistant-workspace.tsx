@@ -2,6 +2,8 @@
 
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import type { AssistantChatMessage } from "../../../lib/assistant/chat";
+import type {AssistantEvidence} from "../../../lib/assistant/context";
+type ChatWithSources=AssistantChatMessage&{evidence?:AssistantEvidence[];dataNotes?:string[]};
 import type { Translator } from "../../../types/app";
 
 type ConnectionState = "checking" | "configured" | "unconfigured" | "error";
@@ -13,7 +15,7 @@ export default function AIAssistantWorkspace({ t }: { t: Translator }) {
   const [model, setModel] = useState("deepseek-flash");
   const [provider, setProvider] = useState<"ollama" | "deepseek">("deepseek");
   const [connectionCheck, setConnectionCheck] = useState(0);
-  const [messages, setMessages] = useState<AssistantChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatWithSources[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -53,12 +55,14 @@ export default function AIAssistantWorkspace({ t }: { t: Translator }) {
       const response = await fetch("/api/assistant/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: nextMessages.slice(-20) }),
+        body: JSON.stringify({ messages: nextMessages.slice(-20).map(({role,content})=>({role,content})) }),
       });
       const data = await response.json() as {
         status?: string;
         message?: AssistantChatMessage | string;
         model?: string;
+        evidence?: AssistantEvidence[];
+        dataNotes?: string[];
       };
       if (data.status === "not_configured") {
         setConnection("unconfigured");
@@ -67,7 +71,9 @@ export default function AIAssistantWorkspace({ t }: { t: Translator }) {
       }
       if (!response.ok || !data.message || typeof data.message === "string")
         throw new Error(typeof data.message === "string" ? data.message : t("The assistant could not answer.", "AI 助手暂时无法回答。"));
-      setMessages(current => [...current, data.message as AssistantChatMessage]);
+      setMessages(current => [...current, {...data.message as AssistantChatMessage,
+        evidence:Array.isArray(data.evidence)?data.evidence:[],
+        dataNotes:Array.isArray(data.dataNotes)?data.dataNotes:[]}]);
       if (data.model) setModel(data.model);
     } catch (error) {
       setError(error instanceof Error ? error.message : t("The assistant is temporarily unavailable.", "AI 助手暂时不可用。"));
@@ -90,8 +96,8 @@ export default function AIAssistantWorkspace({ t }: { t: Translator }) {
 
   const suggestions = [
     t("Explain the difference between P/E and free-cash-flow yield.", "解释市盈率与自由现金流收益率的区别。"),
-    t("What risks should I check before researching a stock?", "研究一只股票前应该检查哪些风险？"),
-    t("Help me understand portfolio diversification.", "帮我理解投资组合分散化。"),
+    t("Show AAPL latest available price, valuation and historical risk with sources.", "引用数据分析 AAPL 最近收盘价、估值和历史风险。"),
+    t("What does my Paper portfolio hold, and how much is its unrealized P/L?", "我的 Paper Portfolio 持有哪些股票，浮动盈亏是多少？"),
   ];
   const ready = connection === "configured";
 
@@ -100,7 +106,7 @@ export default function AIAssistantWorkspace({ t }: { t: Translator }) {
       <div>
         <p className="mb-2 text-[11px] font-bold tracking-[.18em] text-[#87e5d1]">AI WORKSPACE</p>
         <h1 className="text-3xl font-semibold sm:text-[38px]">AI Assistant</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{t("Ask investment research questions in a focused, private workspace. The assistant does not place trades or automatically read your portfolio.", "在独立工作区中询问投资研究问题。AI 助手不会下单，也不会自动读取你的投资组合。")}</p>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">{t("Ask about stocks and SEE-calculated valuations or risk. Read-only facts are retrieved when relevant; local Ollama can access your Paper holdings only when you ask. No trades are placed.", "可以询问股票行情以及 SEE 计算的估值和风险指标。系统按问题读取只读数据；本地 Ollama 只在你主动询问时读取 Paper 持仓，不会下单。")}</p>
       </div>
       <span className={"rounded-full border px-3 py-2 text-xs font-semibold "+(ready?"border-emerald-300/20 bg-emerald-500/10 text-emerald-200":"border-white/10 bg-[#283950] text-slate-300")}>
         {connection === "checking" ? t("CHECKING CONNECTION", "正在检查连接") : ready ? `${provider === "ollama" ? "Local · " : ""}${model} · ${t("READY", "已连接")}` : t("NOT CONNECTED", "尚未连接")}
@@ -144,6 +150,22 @@ export default function AIAssistantWorkspace({ t }: { t: Translator }) {
         {messages.map((message, index) => <div key={`${message.role}-${index}`} className={"flex "+(message.role === "user" ? "justify-end" : "justify-start")}>
           <div className={"max-w-[88%] whitespace-pre-wrap rounded-2xl px-4 py-3 text-sm leading-6 sm:max-w-[76%] "+(message.role === "user" ? "rounded-br-md bg-[#2b635d] text-white" : "rounded-bl-md border border-white/10 bg-[#101d30] text-slate-200")}>
             {message.content}
+            {message.role==="assistant"&&((message.evidence?.length??0)>0||(message.dataNotes?.length??0)>0)&&
+              <details className="mt-3 whitespace-normal border-t border-white/10 pt-2 text-xs text-slate-400">
+                <summary className="cursor-pointer font-semibold">
+                  {t("Verified data & sources", "核实数据与来源")} · {message.evidence?.length??0}
+                </summary>
+                <div className="mt-3 space-y-3 leading-5">
+                  {(message.evidence??[]).map(item=><div key={item.id} className="rounded-lg border border-white/10 p-2">
+                    <strong className="block text-slate-200">[{item.id}] {item.title}</strong>
+                    <p className="mt-1">{item.source} · {item.asOf}</p>
+                    <p className="mt-1 whitespace-pre-wrap">{item.summary}</p>
+                    {item.url&&<a className="mt-1 inline-block text-[#8de0cc] underline" href={item.url}
+                      target="_blank" rel="noopener noreferrer">{t("Original filing/source", "原始来源")}</a>}
+                  </div>)}
+                  {(message.dataNotes??[]).map((note,i)=><p key={i} className="text-amber-200">{note}</p>)}
+                </div>
+              </details>}
           </div>
         </div>)}
         {sending && <div className="flex justify-start"><div className="rounded-2xl rounded-bl-md border border-white/10 bg-[#101d30] px-4 py-3 text-sm text-slate-400">{t("Thinking…", "正在思考…")}</div></div>}
