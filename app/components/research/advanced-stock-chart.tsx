@@ -272,6 +272,16 @@ function HistoryChart({payload,mode,showVolume}:{
           height={Math.max(.5,bar.volume/volMax*(VOL_BOTTOM-VOL_TOP))}
           fill={bar.close>=bar.open?candleUp:candleDown} opacity=".52"/>)}
       </>}
+      {showVolume&&<g pointerEvents="none">
+        {/* Most recent completed bucket volume, not a streaming volume quote. */}
+        <rect x={W-R+3}
+          y={within(VOL_BOTTOM-latest.volume/volMax*(VOL_BOTTOM-VOL_TOP)-11,VOL_TOP,VOL_BOTTOM-22)}
+          width={R-8} height="22" rx="2" fill={latestColor}/>
+        <text x={W-R+(R-2)/2}
+          y={within(VOL_BOTTOM-latest.volume/volMax*(VOL_BOTTOM-VOL_TOP)-11,VOL_TOP,VOL_BOTTOM-22)+15}
+          textAnchor="middle" fontWeight="600" fontSize="12"
+          style={{fill:"#ffffff"}}>{compact(latest.volume)}</text>
+      </g>}
       {timelineTicks.map((index,k)=><text key={"time-"+index}
         x={x(index)} y={H-15} fontSize="11" fill="#879db0"
         textAnchor={k===0?"start":k===timelineTicks.length-1?"end":"middle"}>
