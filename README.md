@@ -21,15 +21,15 @@ are requested per batch, cached in memory for 25 seconds to conserve provider
 requests. Paper API credentials stay on the server; the new search-quotes
 endpoint remains local-development-only until authentication is implemented.
 
-## Research DCF v0.1 — five-year equity cash-flow scenario model
+## Research DCF v0.2 — one-year forecast equity cash-flow scenario model
 
 Research → Stock Reports → Company Fundamentals now includes an interactive
-five-year discounted cash-flow panel. It starts from **verified SEC 10-Q TTM
+one-year explicit-forecast discounted cash-flow panel. It starts from **verified SEC 10-Q TTM
 or recent 10-K annual operating cash flow minus reported PP&E purchases**
 and a validated, dated SEC issuer-level outstanding-share count. Users
-explicitly adjust five-year annual cash-flow growth, **cost of equity**, and
-terminal growth. The panel shows projected annual cash flows, their present
-values, Gordon-growth terminal value, modeled equity value per share,
+explicitly adjust next-year cash-flow growth, **cost of equity**, and
+terminal growth. The panel shows next-year projected cash flow and its present
+value, a Gordon-growth terminal value at year one, modeled equity value per share,
 scenario upside/downside against the dated Alpaca IEX close, and a 3×3
 discount-rate/terminal-growth sensitivity matrix. Invalid and missing
 inputs produce no invented valuation.
@@ -39,6 +39,8 @@ CFO minus capex omits net borrowing, so it is not a fully reconciled FCFE.
 It is also NOT an unlevered FCFF/WACC enterprise valuation and must not be
 represented as one. It assumes constant projected growth, unchanged shares
 and investor-supplied—not verified analyst—discount/growth rates.
+With just one explicit forecast year, most estimated equity value may depend on the terminal
+value. The simpler model should not be mistaken for improved forecast accuracy.
 Negative cash flow, stale or unavailable share snapshots, and unsupported
 multiple-share-class issuers are withheld. The prototype is unsuitable for
 some sectors, especially banks/insurers. No security recommendation or
