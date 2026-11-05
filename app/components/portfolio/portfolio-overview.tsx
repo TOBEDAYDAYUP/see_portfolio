@@ -1,6 +1,8 @@
 "use client";
 
-import type { PaperAccountSummary, PortfolioHistoryPoint } from "../../../lib/alpaca/types";
+import {useEffect,useState} from "react";
+import type { PaperAccountSummary, PortfolioHistoryPoint, PaperHistoryResponse } from "../../../lib/alpaca/types";
+import {portfolioHistoryRanges,portfolioHistoryResolution,type PortfolioHistoryRange} from "../../../lib/alpaca/history-range";
 import PaperEquityChart from "./paper-equity-chart";
 
 type Props={
@@ -8,6 +10,7 @@ type Props={
   history:PortfolioHistoryPoint[];
   historyAvailable:boolean;
   positionCount:number;
+  fetchedAt:string;
 };
 const usd=(v:number|null|undefined)=> v===null||v===undefined ? "—" :
   new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2}).format(v);
@@ -21,7 +24,54 @@ const signedPct=(v:number|null)=>{
 };
 
 /** Original two-column chart/radar layout, now driven by REAL Alpaca paper equity data. */
-export default function PortfolioOverview({account,history,historyAvailable,positionCount}:Props) {
+export default function PortfolioOverview({account,history,historyAvailable,positionCount,fetchedAt}:Props) {
+  const [range,setRange]=useState<PortfolioHistoryRange>("1M");
+  const [remote,setRemote]=useState<{
+    range:PortfolioHistoryRange;token:string;points:PortfolioHistoryPoint[];
+  }|null>(null);
+  const [remoteError,setRemoteError]=useState<{
+    range:PortfolioHistoryRange;token:string;message:string;
+  }|null>(null);
+  useEffect(()=>{
+    if(range==="1M")return;
+    const controller=new AbortController();
+    void (async()=>{
+      try{
+        const response=await fetch("/api/alpaca/portfolio/history?range="+encodeURIComponent(range),{
+          cache:"no-store",signal:controller.signal,
+        });
+        const data=await response.json() as PaperHistoryResponse;
+        if(controller.signal.aborted)return;
+        if(response.ok&&data.status==="ok"&&data.range===range){
+          setRemote({range,token:fetchedAt,points:data.points});
+          setRemoteError(null);
+        }else{
+          setRemote(null);
+          setRemoteError({range,token:fetchedAt,message:
+            data.status==="error"||data.status==="not_configured"?data.message:"Account history unavailable."});
+        }
+      }catch{
+        if(!controller.signal.aborted){
+          setRemote(null);
+          setRemoteError({range,token:fetchedAt,message:"Unable to load historical account equity."});
+        }
+      }
+    })();
+    return ()=>controller.abort();
+  },[range,fetchedAt]);
+  const selectRange=(next:PortfolioHistoryRange)=>{
+    if(next===range)return;
+    setRange(next);
+    setRemote(null);
+    setRemoteError(null);
+  };
+  const validRemote=remote!==null&&remote.range===range&&remote.token===fetchedAt;
+  const validError=remoteError!==null&&remoteError.range===range&&remoteError.token===fetchedAt;
+  const displayedPoints=range==="1M"?history:(validRemote?remote.points:[]);
+  const loaded=range==="1M"||validRemote;
+  const errorMessage=range==="1M"
+    ?(historyAvailable?null:"Alpaca equity history is temporarily unavailable.")
+    :(validError?remoteError.message:null);
   const previous=account.lastEquity;
   const changeToday=account.equity!==null&&previous!==null?account.equity-previous:null;
   const dailyPct=changeToday!==null&&previous!==null&&previous!==0?100*changeToday/previous:null;
@@ -40,7 +90,7 @@ export default function PortfolioOverview({account,history,historyAvailable,posi
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="font-semibold">Portfolio value over time</h2>
-          <p className="mt-1 text-xs text-slate-500">Actual Alpaca Paper account equity · last month</p>
+          <p className="mt-1 text-xs text-slate-500">Actual Alpaca Paper account equity · select a time range</p>
         </div>
         <span className="rounded-full bg-emerald-300/10 surface-pill px-3 py-1 text-[11px] font-semibold text-emerald-200">ALPACA · PAPER</span>
       </div>
@@ -53,11 +103,21 @@ export default function PortfolioOverview({account,history,historyAvailable,posi
       </div>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
         <span className="text-[11px] text-slate-400">● Portfolio equity (USD)</span>
-        <span className="rounded-md bg-[#34485d] px-2 py-1.5 text-xs text-slate-200">1M · Daily snapshots</span>
+        <div role="group" aria-label="Portfolio equity history time range" className="flex flex-wrap items-center gap-1">
+          {portfolioHistoryRanges.map(item=><button key={item} type="button"
+            aria-pressed={range===item} onClick={()=>selectRange(item)}
+            className={"rounded-lg px-2.5 py-1.5 text-xs font-semibold transition-colors sm:px-3 "+
+              (range===item?"bg-[#83e3cd] text-[#102139]":"text-slate-400 hover:bg-white/10 hover:text-slate-100")}>
+            {item}
+          </button>)}
+        </div>
       </div>
-      {historyAvailable
-        ? <PaperEquityChart points={history}/>
-        : <div className="grid min-h-[245px] place-items-center text-center text-sm text-slate-400">Alpaca equity history is temporarily unavailable.</div>}
+      <p className="mt-2 text-[11px] text-slate-500" aria-live="polite">{range} · {portfolioHistoryResolution[range]} · Alpaca Paper</p>
+      {errorMessage
+        ? <div role="status" className="grid min-h-[245px] place-items-center px-4 text-center text-sm text-amber-200">{errorMessage}</div>
+        : !loaded
+          ? <div role="status" className="grid min-h-[245px] place-items-center text-center text-sm text-slate-400">Loading {range} Alpaca account history…</div>
+          : <PaperEquityChart points={displayedPoints} range={range}/>} 
       <p className="mt-2 border-t border-white/10 pt-2 text-[11px] leading-5 text-slate-500">
         Changes in account equity may include deposits and withdrawals; they are not a time-weighted investment return. No fictional performance data is shown.
       </p>
