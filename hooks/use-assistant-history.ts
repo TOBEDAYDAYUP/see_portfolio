@@ -13,14 +13,17 @@ export function useAssistantHistory(){
  const [state,setState]=useState<AssistantHistory>(initial);
  const [loaded,setLoaded]=useState(false);
  useEffect(()=>{
-  try{
-   const raw=localStorage.getItem(ASSISTANT_HISTORY_KEY);
-   if(raw){
-    const parsed=parseAssistantHistory(JSON.parse(raw) as unknown);
-    if(parsed)setState(parsed);
-   }
-  }catch{/* Browser storage is optional; in-memory history still works. */}
-  setLoaded(true);
+  const frame=requestAnimationFrame(()=>{
+   try{
+    const raw=localStorage.getItem(ASSISTANT_HISTORY_KEY);
+    if(raw){
+     const parsed=parseAssistantHistory(JSON.parse(raw) as unknown);
+     if(parsed)setState(parsed);
+    }
+   }catch{/* Browser storage is optional; in-memory history still works. */}
+   setLoaded(true);
+  });
+  return ()=>cancelAnimationFrame(frame);
  },[]);
  useEffect(()=>{
   if(!loaded)return;
