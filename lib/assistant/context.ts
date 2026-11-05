@@ -76,8 +76,7 @@ export function findAssistantSymbols(query:string,assets:readonly ResearchAsset[
   return unique(symbols);
 }
 export function classifyAssistantDataNeeds(latest:string,recentUserText="",assets:readonly ResearchAsset[]=[]):AssistantDataNeeds{
-  const text=latest+" "+recentUserText;
-  const portfolio=/\b(my|our)\s+(portfolio|holdings|positions|account|stocks)\b|\bportfolio\s+(health|risk|valuation|return|dividends)\b|我的?(?:投资组合|持仓|账户)|组合(?:风险|估值|收益|分红)|持仓情况/i.test(latest);
+  const portfolio=/\b(my|our)\s+(portfolio|holdings|position|positions|account|stocks)\b|\bportfolio\s+(health|risk|valuation|return|dividends)\b|我的?(?:投资组合|持仓|账户)|组合(?:风险|估值|收益|分红)|持仓情况/i.test(latest);
   const portfolioRisk=portfolio&&/risk|var|expected shortfall|volatility|drawdown|diversif|风险|波动|回撤|分散|持仓分析/i.test(latest);
   const portfolioValuation=portfolio&&/valuation|p\/e|pe\b|fcf|fair value|multiple|估值|市盈|现金流|便宜|昂贵/i.test(latest);
   const portfolioDividends=portfolio&&/dividend|income|payout|分红|股息|派息/i.test(latest);
