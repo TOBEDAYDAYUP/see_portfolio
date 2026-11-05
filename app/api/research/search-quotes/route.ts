@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import {canUsePrivateResearch} from "../../../../lib/private-preview/access";
 import { loadResearchSearchQuotes } from "../../../../lib/research/search-quotes-server";
 
 const headers={"Cache-Control":"private, no-store, max-age=0"};
 export async function GET(request:Request){
- if(process.env.NODE_ENV!=="development")
+ if(!canUsePrivateResearch(request))
   return NextResponse.json({status:"error",message:"Research quotes are disabled until user authentication is available."},{status:403,headers});
  const raw=new URL(request.url).searchParams.get("symbols")??"";
  const symbols=raw.split(",").map(s=>s.trim().toUpperCase());

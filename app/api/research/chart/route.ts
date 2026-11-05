@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
+import {canUsePrivateResearch} from "../../../../lib/private-preview/access";
 import { loadStockChart } from "../../../../lib/research/chart-server";
 import { validateResearchSymbol } from "../../../../lib/research/server";
 import { CHART_RANGES } from "../../../../lib/research/chart-utils";
 import type { ChartRange } from "../../../../lib/research/chart-utils";
 const headers={"Cache-Control":"private, no-store, max-age=0"};
 export async function GET(request:Request){
-  if(process.env.NODE_ENV!=="development")
+  if(!canUsePrivateResearch(request))
     return NextResponse.json({status:"error",message:"Research charts require user authentication before production deployment."},{status:403,headers});
   const url=new URL(request.url);
   const symbol=validateResearchSymbol(url.searchParams.get("symbol")??"");

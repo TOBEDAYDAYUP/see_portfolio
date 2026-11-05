@@ -1,4 +1,5 @@
 import "server-only";
+import {isPreviewConfigured} from "../private-preview/access";
 import {loadActiveResearchAssets,loadResearchNews} from "../research/server";
 import {loadDailyStockCloses} from "../alpaca/market-data";
 import {loadFundamentals,hasSECContact} from "../research/sec-server";
@@ -32,8 +33,11 @@ export async function loadAssistantContext(messages:readonly AssistantChatMessag
  const evidence:AssistantEvidence[]=[];
  const notes:string[]=[];
  const stockAnalyses:StockAnalysisInput[]=[];
- if(process.env.NODE_ENV!=="development"){
-  return {evidence,stockAnalyses,notes:["No market or private portfolio integrations are exposed in production before user authentication."]};
+ // This loader is invoked only after session authorization in /api/assistant/chat.
+ // Cloud research may be fetched for the owner, but account holdings stay
+ // excluded from DeepSeek prompts by the provider-level rule below.
+ if(process.env.NODE_ENV!=="development"&&!isPreviewConfigured()){
+  return {evidence,stockAnalyses,notes:["Market context is disabled until the Private Beta access gate is configured."]};
  }
  let assets:ResearchAsset[]=[];
  // Look up verified listed tickers only for stock questions. Catalog is already
