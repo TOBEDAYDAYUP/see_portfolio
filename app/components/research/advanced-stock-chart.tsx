@@ -246,7 +246,7 @@ function HistoryChart({payload,mode,showVolume}:{
       </div>
       <div className="chart-inspector-label chart-inspector-value pointer-events-none absolute z-50 whitespace-nowrap"
         style={{left:((W-R)/W*100)+"%",top:(pricePosition(focused.close,low,high)/H*100)+"%"}}>
-        Close {money(focused.close)}
+        {money(focused.close)}
       </div>
     </>}
     </div>
