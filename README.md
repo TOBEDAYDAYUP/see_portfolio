@@ -18,6 +18,39 @@ default even when a key exists. Add authentication and rate limiting, then set
 portfolio data and cannot place trades. Its output may be inaccurate and is not
 investment advice.
 
+## Compact Holdings first-screen layout
+
+The Holdings page removes the former `PORTFOLIO WORKSPACE` eyebrow and
+`Your Alpaca Paper account, simply organized` subtitle. Its title and
+Holdings header use reduced top and bottom spacing to bring the **Portfolio
+value over time** and **Portfolio health analysis** cards higher on desktop.
+The chart SVG viewBox, column widths, card sizes, metrics and data behavior
+are unchanged. Other Portfolio and Research pages retain their spacing.
+
+## Test AI Assistant locally before spending on DeepSeek
+
+The AI Assistant now supports **two opt-in server-side backends** while
+preserving the existing UI, validation and safety messages:
+
+- `ASSISTANT_PROVIDER=ollama` uses your own Mac's **Ollama** server
+  at the fixed loopback URL `http://127.0.0.1:11434`. The default
+  `OLLAMA_MODEL=qwen3:0.6b` is a tiny local model. Install Ollama,
+  run `ollama pull qwen3:0.6b`, and start Ollama (the app or
+  `ollama serve`). No DeepSeek key or internet inference is needed after
+  model download. Visit **AI Assistant → Recheck connection** if the server
+  was started after opening the page. The server checks for the exact
+  installed model and **never downloads one automatically**. For privacy,
+  Ollama mode is disabled in production until an authenticated backend is
+  designed; model output may be inaccurate.
+- `ASSISTANT_PROVIDER=deepseek` (default if unset) continues to use
+  `DEEPSEEK_API_KEY` and the low-cost `deepseek-flash` model with a
+  limited output budget. Obtain a key from
+  https://platform.deepseek.com/ and keep it **only** in `.env.local`.
+  Never use `NEXT_PUBLIC_` for the key.
+- Switching providers requires a restart of `npm run dev`. No changes
+  to Portfolio valuations, trading, positions, chat history storage or
+  Research modules. The assistant does not automatically read account data.
+
 ## Portfolio Returns v1 — Alpaca Paper reported P/L
 
 Portfolio → Returns now uses **real Alpaca Paper data** only. It requests
