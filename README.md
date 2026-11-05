@@ -4,6 +4,18 @@ A lightweight investment research prototype built with **Next.js 16, React 19, T
 
 > **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
 
+## Alpaca Settings connection-test diagnostics
+
+Settings → Test Alpaca connection distinguishes an actual paper-account
+connection, missing local `.env.local` credentials, Alpaca authentication
+or upstream errors, and local Next.js API failures. In particular, a
+missing route (HTTP 404) or a non-JSON development error response (HTTP 500)
+now identifies the local server as the likely issue instead of claiming that
+Alpaca is unreachable. The UI never prints raw HTML or credential values.
+For debugging, visit `http://localhost:3000/api/alpaca/portfolio` on the
+same Mac while the development server runs and inspect the response status;
+do not share full account/position data or any API secrets.
+
 ## Portfolio equity chart · selectable history windows
 
 Portfolio → Holdings → Portfolio value over time provides five clickable
