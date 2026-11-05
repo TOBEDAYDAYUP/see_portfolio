@@ -50,6 +50,7 @@ export function historyXAxisTickIndices(points:PortfolioHistoryPoint[],range:Por
    else groups.set(key,{first:i,last:i});
   });
   const sessions=[...groups.values()].slice(-5);
+  if(sessions.length===1)return [sessions[0].first];
   if(sessions.length>=2){
    return sessions.map((s,i)=>i===0?s.first:i===sessions.length-1?s.last:Math.round((s.first+s.last)/2));
   }
