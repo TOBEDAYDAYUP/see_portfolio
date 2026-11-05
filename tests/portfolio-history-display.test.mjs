@@ -39,5 +39,8 @@ test("5D uses at most one tick per real session, no invented missing dates",()=>
   sample("2026-11-03",15),sample("2026-11-03",17),
  ];
  assert.deepEqual(historyXAxisTickIndices(points,"5D"),[0,3,5]);
+ assert.deepEqual(historyXAxisTickIndices([
+  sample("2026-11-03",15),sample("2026-11-03",17)
+ ],"5D"),[0]); // one session means one date label, never repeated five times
  assert.equal(lastFiveMarketSessions([]).length,0);
 });
