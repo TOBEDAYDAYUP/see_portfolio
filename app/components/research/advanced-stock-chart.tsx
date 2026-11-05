@@ -113,7 +113,7 @@ function HistoryChart({payload,mode,showVolume}:{
   const focusedDate=focusedGroup
     ?inspectionTimestamp(inspectionBarTimestamp(focusedGroup),intraday)
     :"No history";
-  const timeBadgeWidth=intraday?186:128;
+  const timeBadgeWidth=intraday?192:130;
   const cursorX=currentHover===null?0:x(currentHover);
   const badgeX=within(cursorX-timeBadgeWidth/2,L,W-R-timeBadgeWidth);
   const cursorY=focused?pricePosition(focused.close,low,high):0;
@@ -302,14 +302,8 @@ function HistoryChart({payload,mode,showVolume}:{
       </>}
     </svg>
     </div>
-      <div className="chart-inspector-label chart-inspector-value pointer-events-none absolute z-50 whitespace-nowrap"
-        style={{left:((W-R)/W*100)+"%",top:(pricePosition(focused.close,low,high)/H*100)+"%"}}>
-        {money(focused.close)}
-      </div>
-    </>}
-    </div>
     <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
-      <span>{visible.length} / {TARGET_VISIBLE_BARS} candles · {density.rawCount} source bars · two-finger scrolls page · pinch to zoom · click-and-hold + drag ←→ to pan when zoomed</span>
+      <span>{visible.length} / {TARGET_VISIBLE_BARS} chart buckets · {density.rawCount} source bars · two-finger scroll · pinch to zoom · hold + drag ←→ to pan when zoomed</span>
       <span>{zoom?"Zoomed interval":"Full selected period"} · OHLCV aggregation</span>
     </div>
   </div>;
@@ -375,9 +369,9 @@ export default function AdvancedStockChart({symbol}:{symbol:string}){
         <select id="research-chart-style" value={mode}
           onChange={event=>setMode(event.target.value as Mode)}
           className="surface-field cursor-pointer rounded-lg border px-3 py-2 text-sm font-semibold">
-          <option value="candles">Candlesticks</option>
-          <option value="line">Line chart</option>
-          <option value="bars">OHLC bars</option>
+          {MARKET_CHART_STYLES.map(option=><option key={option.value} value={option.value}>
+            {option.label}
+          </option>)}
         </select>
       </label>
     </div>
