@@ -66,7 +66,7 @@ export default function DCFAnalysis({data,price,priceAsOf,priceSource}:{
  const terminalCases=[terminalGrowth-0.5,terminalGrowth,terminalGrowth+0.5];
  return <section aria-label="Discounted cash flow model" className="surface-panel rounded-2xl p-5 sm:p-7">
   <div className="flex flex-wrap items-start justify-between gap-3">
-   <div><h2 className="text-lg font-semibold">DCF Valuation · 5-Year Model</h2>
+   <div><h2 className="text-lg font-semibold">DCF Valuation · 1-Year Forecast</h2>
     <p className="mt-1 text-xs leading-5 text-slate-400">SEC historical operating cash flow − capital expenditure · editable forward assumptions</p></div>
    <span className="surface-pill rounded-full px-3 py-1.5 text-[11px] font-semibold">SCENARIO ESTIMATE · NOT ANALYST TARGET</span>
   </div>
@@ -81,7 +81,7 @@ export default function DCFAnalysis({data,price,priceAsOf,priceSource}:{
     {" · dated "+(current.sharesDate??"—")+" · "+(current.sharesSource??"SEC")}.
    </p>
    <div className="mt-4 grid gap-3 md:grid-cols-3">
-    <Input label="Five-year annual growth" value={growth} setValue={setGrowth}
+    <Input label="Next-year cash-flow growth" value={growth} setValue={setGrowth}
      min={-30} max={50} step={0.5} description="Your scenario assumption, not an analyst estimate"/>
     <Input label="Cost of equity" value={costOfEquity} setValue={setCostOfEquity}
      min={3} max={40} step={0.5} description="Equity discount rate, not WACC"/>
@@ -94,16 +94,16 @@ export default function DCFAnalysis({data,price,priceAsOf,priceSource}:{
    </p>:<>
     <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
      <Tile label="Modeled equity value / share" value={dollar(model.estimatedValuePerShareUsd)}
-      description="5-year present value + terminal value, divided by dated reported shares"/>
+      description="Year-one cash flow PV + year-one terminal value PV, divided by dated reported shares"/>
      <Tile label="Scenario upside / downside" value={percent(model.upsideVsReferencePct)}
       description={"Versus historical IEX close "+dollar(current.price)+" · "+priceAsOf}/>
      <Tile label="Estimated total equity value" value={shortUSD(model.estimatedEquityValueUsd)}
       description="Discounted equity cash-flow proxy, not enterprise value"/>
      <Tile label="Terminal value contribution" value={model.terminalWeightPct.toFixed(1)+"%"}
-      description="Share of total modeled value arising after year five"/>
+      description="Share of total modeled value arising after forecast year one"/>
     </div>
     <details className="mt-4 rounded-xl border border-white/10 p-4" open>
-     <summary className="cursor-pointer text-sm font-semibold">Projected cash flow · five years</summary>
+     <summary className="cursor-pointer text-sm font-semibold">Projected cash flow · next year</summary>
      <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[540px] text-left text-xs">
       <thead><tr className="border-b border-white/10 text-slate-400">
        <th className="px-3 py-3">Projection year</th>
@@ -140,12 +140,13 @@ export default function DCFAnalysis({data,price,priceAsOf,priceSource}:{
    </>}
   </>}
   <p className="mt-5 text-[11px] leading-5 text-slate-500">
-   Methodology: 5 annual cash-flow forecasts discounted at an assumed cost of equity,
-   plus a Gordon-growth terminal value. Starting cash flow equals SEC operating cash flow
+   Methodology: one forward-year cash-flow projection discounted at an assumed cost of equity,
+   plus a Gordon-growth terminal value calculated at the end of year one and discounted to the present. Starting cash flow equals SEC operating cash flow
    minus reported PP&amp;E purchases; this is an equity cash-flow proxy, NOT rigorously
    reconciled FCFE (net borrowing is excluded) or unlevered FCFF/WACC.
    No debt, excess-cash or enterprise-value bridge is applied. Assumes unchanged shares
-   and constant growth; not appropriate for every sector, especially financial firms,
+   and a perpetual terminal growth rate after year one. This short forecast horizon increases
+   reliance on the terminal-value assumption; not appropriate for every sector, especially financial firms,
    or companies with negative or highly cyclical cash flow. Historical filings are actual;
    forward rates are illustrative user inputs, not verified forecasts or investment advice.
   </p>
