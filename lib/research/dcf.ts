@@ -1,5 +1,5 @@
 /**
- * Five-year equity cash-flow proxy DCF (FCFE-like, NOT unlevered FCFF).
+ * One-year explicit-forecast equity cash-flow proxy DCF (FCFE-like, NOT unlevered FCFF).
  *
  * Cash flow from operations less capital expenditure includes interest
  * and working-capital effects but does not add net borrowing. As a result
@@ -25,7 +25,7 @@ export type DCFYear={
 export type DCFResult={
   projectedYears:DCFYear[];
   pvForecastUsd:number;
-  terminalValueAtYearFiveUsd:number;
+  terminalValueAtYearOneUsd:number;
   pvTerminalUsd:number;
   estimatedEquityValueUsd:number;
   estimatedValuePerShareUsd:number;
@@ -47,21 +47,21 @@ export function calculateEquityCashFlowDCF(a:DCFAssumptions):DCFResult|null{
  const projectedYears:DCFYear[]=[];
  let flow=a.baseCashFlowUsd;
  let pvForecastUsd=0;
- for(let year=1;year<=5;year++){
+ for(let year=1;year<=1;year++){
   flow*=1+growth;
   const discounted=flow/(1+requiredReturn)**year;
   if(!finite(flow)||!finite(discounted))return null;
   projectedYears.push({year,projectedCashFlowUsd:flow,presentValueUsd:discounted});
   pvForecastUsd+=discounted;
  }
- const terminalValueAtYearFiveUsd=flow*(1+terminalGrowth)/(requiredReturn-terminalGrowth);
- const pvTerminalUsd=terminalValueAtYearFiveUsd/(1+requiredReturn)**5;
+ const terminalValueAtYearOneUsd=flow*(1+terminalGrowth)/(requiredReturn-terminalGrowth);
+ const pvTerminalUsd=terminalValueAtYearOneUsd/(1+requiredReturn);
  const estimatedEquityValueUsd=pvForecastUsd+pvTerminalUsd;
  const estimatedValuePerShareUsd=estimatedEquityValueUsd/a.sharesOutstanding;
  if(!finite(estimatedValuePerShareUsd)||estimatedEquityValueUsd<=0)return null;
  const px=a.referencePriceUsd;
  return {
-  projectedYears,pvForecastUsd,terminalValueAtYearFiveUsd,pvTerminalUsd,
+  projectedYears,pvForecastUsd,terminalValueAtYearOneUsd,pvTerminalUsd,
   estimatedEquityValueUsd,estimatedValuePerShareUsd,
   upsideVsReferencePct:px!==null&&finite(px)&&px>0
    ?(estimatedValuePerShareUsd/px-1)*100:null,
