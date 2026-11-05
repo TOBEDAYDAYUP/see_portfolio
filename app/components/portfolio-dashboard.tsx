@@ -8,6 +8,7 @@ import AlpacaPortfolio from "./portfolio/alpaca-portfolio";
 import RiskAnalysis from "./portfolio/risk-analysis";
 import PortfolioValuation from "./portfolio/portfolio-valuation";
 import PortfolioDividends from "./portfolio/portfolio-dividends";
+import PortfolioReturns from "./portfolio/portfolio-returns";
 
 export type { PortfolioSection } from "../../types/app";
 
@@ -25,12 +26,13 @@ export default function PortfolioDashboard({section,currency="USD",onSettings}:{
         <h1 className="text-3xl font-semibold sm:text-[38px]">My Portfolio</h1>
         {section!=="holdings"&&<p className="mt-2 text-sm text-slate-400">{section==="analysis"?"Risk analytics for your Alpaca Paper positions":labels[section]}</p>}
       </div>
-      <span className="surface-pill rounded-full px-3 py-2 text-xs">{["holdings","analysis","valuations","dividends"].includes(section)?"ALPACA · PAPER":"RESEARCH · PREVIEW"}</span>
+      <span className="surface-pill rounded-full px-3 py-2 text-xs">{["holdings","analysis","valuations","dividends","returns"].includes(section)?"ALPACA · PAPER":"RESEARCH · PREVIEW"}</span>
     </div>
 
     {section==="analysis" ? <RiskAnalysis onSettings={onSettings}/> :
      section==="valuations"?<PortfolioValuation/>:
      section==="dividends"?<PortfolioDividends/>:
+     section==="returns"?<PortfolioReturns onSettings={onSettings}/>:
      section!=="holdings" ? <Soon section={section}/> : <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>

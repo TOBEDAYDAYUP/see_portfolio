@@ -440,7 +440,8 @@ body {
   transform: translate(-50%, -50%);
 }
 .chart-inspector-value {
-  transform: translate(8px, -50%);
+  /* Recenter price badges slightly inward, leaving room to the screen edge. */
+  transform: translate(-75%, -50%);
 }
 .see-shell[data-theme="light"] .chart-inspector-label {
   color: #101820;
@@ -468,37 +469,4 @@ body {
   background: #eef5f3;
 }
 
-/* Light-mode Research-only pale mint sidebar.
-   Portfolio sidebar retains its existing appearance; dark theme unchanged. */
-.see-shell[data-theme="light"] .glass-sidebar.research-sidebar {
-  background: linear-gradient(165deg, #effaf5 0%, #e7f6ef 100%);
-  border-right-color: #cde7da;
-  box-shadow: inset -1px 0 0 rgba(75, 147, 122, .08);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-}
-.see-shell[data-theme="light"] .research-sidebar .text-slate-100,
-.see-shell[data-theme="light"] .research-sidebar .text-slate-200 {
-  color: #24483e;
-}
-.see-shell[data-theme="light"] .research-sidebar .text-slate-400 {
-  color: #48665d;
-}
-.see-shell[data-theme="light"] .research-sidebar .glass-nav-item:not([aria-current="page"]) {
-  color: #37584e;
-}
-.see-shell[data-theme="light"] .research-sidebar .glass-nav-item:hover {
-  color: #123f35;
-  background: #d9f1e5;
-  border-color: #c2e7d5;
-}
-.see-shell[data-theme="light"] .research-sidebar .glass-nav-item[aria-current="page"] {
-  color: #0b6251;
-  background: #cceee0;
-  border-color: #a6dccc;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5);
-}
-.see-shell[data-theme="light"] .research-sidebar .glass-nav-item[aria-current="page"]::before {
-  background: #159b84;
-  box-shadow: none;
-}
+/* Research and Portfolio share the same original blue sidebar in both themes. */

@@ -36,6 +36,7 @@ export type AlpacaPortfolioResult =
 /** A historical chart request returns only sanitized Alpaca account equity points. */
 export type PaperHistoryResponse =
  | {status:"ok";range:import("./history-range").PortfolioHistoryRange;
-    points:PortfolioHistoryPoint[];resolution:string}
+    points:PortfolioHistoryPoint[];resolution:string;
+    pnlPoints:import("../portfolio/returns").ReturnsHistoryPoint[]}
  | {status:"not_configured";message:string}
  | {status:"error";message:string};
