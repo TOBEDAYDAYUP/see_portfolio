@@ -515,3 +515,36 @@ body {
 .see-shell[data-theme="light"] .market-price-canvas text.market-dark-tag {
   fill: #fff !important;
 }
+
+/* SEE Assistant: readable pale-mint composer and sent bubbles in both themes.
+ * Deliberately scoped: leaves Research/Portfolio forms and chart palettes alone. */
+.ai-chat-input {
+  color: #153343;
+  background: #f0f7f7;
+  border: 1px solid #9fcecb;
+}
+.ai-chat-input::placeholder { color: #688397; }
+.ai-chat-input:focus-visible {
+  outline: 2px solid #45c5ab;
+  outline-offset: 2px;
+}
+.ai-user-bubble {
+  color: #123c36;
+  background: #b6efde;
+  border: 1px solid #72c9b4;
+}
+.ai-chat-composer { background: #142337; }
+.see-shell[data-theme="light"] .ai-chat-input {
+  color: #183647;
+  background: #f9ffff;
+  border-color: #a6d0ca;
+}
+.see-shell[data-theme="light"] .ai-user-bubble {
+  color: #13453b;
+  background: #c1f2e3;
+  border-color: #9cddca;
+}
+.see-shell[data-theme="light"] .ai-chat-composer {
+  background: #eef8f7;
+  border-color: #d1e5e7;
+}
