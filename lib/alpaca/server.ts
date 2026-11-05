@@ -194,7 +194,24 @@ export async function loadPaperHistory(range:PortfolioHistoryRange):Promise<Pape
   // 5D means five actual NY market sessions. We deliberately fetched a longer
   // calendar window so weekends/holidays don't shorten the five sessions.
   const points=range==="5D"?lastFiveMarketSessions(allPoints):allPoints;
-  const pnlPoints=parseReturnsHistory(raw,new Set(points.map(point=>point.timestamp)));
+  // Important: Alpaca resets intraday P/L per trading day by default.
+  // For 5D, use an independent 1D-timeframe request to get a continuous
+  // broker P/L baseline across the trading sessions, while retaining the
+  // actual hourly snapshots for the existing equity chart.
+  let pnlPoints:ReturnType<typeof parseReturnsHistory>=[];
+  if(range==="5D"){
+   try{
+    const dailyRaw=await alpacaGet("/v2/account/portfolio/history?period=21D&timeframe=1D",keyId,secretKey);
+    const dailyPoints=lastFiveMarketSessions(parseHistory(dailyRaw));
+    pnlPoints=parseReturnsHistory(dailyRaw,new Set(dailyPoints.map(point=>point.timestamp)));
+   }catch{
+    // Do not make the working equity chart fail just because the separate
+    // daily P/L query is temporarily unavailable.
+    pnlPoints=[];
+   }
+  }else{
+   pnlPoints=parseReturnsHistory(raw,new Set(points.map(point=>point.timestamp)));
+  }
   return {status:"ok",range,points,resolution,pnlPoints};
  }catch(error:unknown){
   const code=error instanceof AlpacaUpstreamError?error.code:"unavailable";
