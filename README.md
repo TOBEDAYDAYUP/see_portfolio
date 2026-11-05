@@ -56,6 +56,38 @@ optional web search requires separately configured retrieval tools such as
 Ollama's authenticated web search API; no arbitrary web browsing has been
 granted in this UI change.
 
+## AI Assistant · evidence-based stock-analysis format v1
+
+For an explicit one-company analysis request (for example "Analyze AAPL" or
+"分析 AAPL 的估值"), the server now produces a **fixed-schema quantitative
+stock report**, without letting a small language model invent the numbers.
+The deterministic sections are Market Snapshot; Trend & Indicators;
+Momentum (RSI & MACD); Volatility & Tail Risk; Fundamentals & Valuation;
+Volume & News; and **Summary** (never a direct buy/sell conclusion).
+Reports are translated into English or Chinese according to the question.
+
+The report is grounded in the same completed historical Alpaca IEX daily
+closes, SEC filings and SEE risk/valuation calculations already in Research,
+with transparent source IDs shown below each conversation answer. Newly
+computed indicators use SMA(5/10/20), Wilder RSI(14), MACD(12,26,9)
+(histogram included), and 5-/20-session close-to-close returns.
+The calculation code is pure, tested and requires adequate historical
+observations. **No trade volume ratio is stated** because the data used
+in this report is daily close-only; missing ratios, RSI, MACD or validated
+fundamentals are marked unavailable rather than fabricated. Any P/S or
+P/B figures using dated reported shares retain their proxy labels. These
+descriptive indicators are neither independently validated trading rules
+nor forward-looking price predictions.
+
+The normal Ollama/DeepSeek conversation path remains in place for casual
+dialogue, concepts, follow-up questions and requests about individual
+metrics. Its system guidance explicitly distinguishes ordinary social chat
+from higher-stakes financial reasoning, to avoid the tiny model mistaking
+politeness for prohibited personalization. A source-backed report is a SEE
+Quant Engine output rather than a generative claim about live markets.
+The chat-history UI persists the report label and citations in the
+browser, subject to the same privacy limitations as other local chats.
+
 ## AI Assistant · grounded SEE Portfolio context v1
 
 The assistant can now answer supported **stock research** questions using
