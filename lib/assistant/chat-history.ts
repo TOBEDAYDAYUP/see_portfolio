@@ -2,7 +2,7 @@ import type {AssistantChatMessage} from "./chat";
 import type {AssistantEvidence} from "./context";
 
 export type SavedAssistantMessage=AssistantChatMessage&{
- evidence?:AssistantEvidence[];dataNotes?:string[];
+ evidence?:AssistantEvidence[];dataNotes?:string[];format?:"see_quant_v1";
 };
 export type AssistantThread={
  id:string;title:string;updatedAt:number;messages:SavedAssistantMessage[];
@@ -64,6 +64,7 @@ export function parseAssistantHistory(raw:unknown):AssistantHistory|null{
    const dataNotes=Array.isArray(msg.dataNotes)?msg.dataNotes.filter(
     (x):x is string=>typeof x==="string").slice(0,5).map(x=>x.slice(0,400)):[];
    messages.push({role:msg.role,content:msg.content,
+    ...(msg.format==="see_quant_v1"?{format:"see_quant_v1" as const}:{}),
     ...(sources.length?{evidence:sources}:{}),...(dataNotes.length?{dataNotes}:{})});
   }
   threads.push({id:thread.id,title:typeof thread.title==="string"?
