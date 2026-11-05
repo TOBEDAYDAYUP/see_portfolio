@@ -231,7 +231,7 @@ export default function PortfolioReturns({onSettings}:{onSettings:()=>void}){
      {history?.status==="error"||history?.status==="not_configured"?history.message:"P/L history unavailable."}
     </p>}
    <p className="mt-4 text-xs leading-6 text-slate-500">
-    Methodology: each plotted value is the change in Alpaca's reported profit_loss
+    Methodology: each plotted value is the change in Alpaca&apos;s reported profit_loss
     from the earliest visible valid snapshot. External cash deposits, withdrawals,
     reporting resets and other account events can affect these values.
     It is NOT a cash-flow-adjusted investment return, time-weighted return,
@@ -241,7 +241,7 @@ export default function PortfolioReturns({onSettings}:{onSettings:()=>void}){
   <PositionReturnsTable positions={positions}/>
   <p className="mt-5 text-xs leading-6 text-slate-500">
    Realized trading P/L requires a complete, reconciled fill/corporate-action ledger
-   and is not reported here. DCF estimates a company's value under assumptions;
+   and is not reported here. DCF estimates a company&apos;s value under assumptions;
    it does not calculate your actual portfolio performance. All account values
    are simulated Alpaca Paper USD values, never fabricated.
   </p>
