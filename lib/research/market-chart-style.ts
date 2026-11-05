@@ -41,3 +41,10 @@ export function marketTimeTickIndices(count:number,maximum=7):number[]{
  if(slots===1)return [0];
  return Array.from({length:slots},(_,i)=>Math.round(i*(count-1)/(slots-1)));
 }
+
+/** Cursor Y-axis level, not a quoted transaction or an OHLC close. */
+export function chartCursorPrice(y:number,low:number,high:number,top:number,bottom:number):number|null{
+ if(![y,low,high,top,bottom].every(Number.isFinite)||high<=low||bottom<=top)return null;
+ const position=Math.max(top,Math.min(bottom,y));
+ return high-(position-top)/(bottom-top)*(high-low);
+}
