@@ -4,6 +4,7 @@ import {useEffect,useState} from "react";
 import type { PaperAccountSummary, PortfolioHistoryPoint, PaperHistoryResponse } from "../../../lib/alpaca/types";
 import {portfolioHistoryRanges,portfolioHistoryResolution,type PortfolioHistoryRange} from "../../../lib/alpaca/history-range";
 import PaperEquityChart from "./paper-equity-chart";
+import PortfolioHealthAnalysis from "./portfolio-health-analysis";
 
 type Props={
   account:PaperAccountSummary;
@@ -147,6 +148,6 @@ export default function PortfolioOverview({account,history,historyAvailable,posi
         Changes in account equity may include deposits and withdrawals; they are not a time-weighted investment return. No fictional performance data is shown.
       </p>
     </section>
-    <section className="flex min-h-[385px] flex-col rounded-2xl border border-white/10 bg-[#172338] surface-panel  p-5 sm:p-6"><h2 className="font-semibold">Portfolio health analysis</h2><p className="mt-1 text-xs text-slate-500">Reserved visualization</p><div className="relative mx-auto my-auto w-full max-w-[210px]"><svg viewBox="0 0 240 240" className="w-full" role="img" aria-label="Empty five-axis chart placeholder"><g transform="translate(120 120)" fill="none" stroke="#455b70">{[35,58,80].map(r=><polygon key={r} points={Array.from({length:5},(_,i)=>{const a=(-90+i*72)*Math.PI/180;return (Math.cos(a)*r).toFixed(1)+","+(Math.sin(a)*r).toFixed(1)}).join(" ")}/>)}{Array.from({length:5},(_,i)=>{const a=(-90+i*72)*Math.PI/180;return <line key={i} x1="0" y1="0" x2={Math.cos(a)*80} y2={Math.sin(a)*80}/>})}</g></svg><div className="absolute inset-0 flex items-center justify-center"><span className="rounded-xl border border-[#4b7970] bg-[#1d3c44] px-4 py-2 text-center text-xs font-semibold text-emerald-100">UNDER DEVELOPMENT</span></div></div><p className="text-sm leading-6 text-slate-400">A simple fundamentals and risk visualization will go here. No scoring model is active.</p></section>
+    <PortfolioHealthAnalysis positionCount={positionCount} fetchedAt={fetchedAt}/>
   </div>;
 }
