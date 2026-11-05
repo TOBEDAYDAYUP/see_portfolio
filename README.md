@@ -4,6 +4,60 @@ A lightweight investment research workspace built with **Next.js 16, React 19, T
 
 > **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
 
+## Vercel Private Beta — owner-only cloud AI and research
+
+**Deployment security:** A private GitHub repository does NOT protect the
+deployed Vercel URL. This project now requires an independently signed,
+HTTP-only, Secure, SameSite=Strict 12-hour owner session in production.
+Unauthenticated browser requests go to `/private-preview`; API requests
+receive HTTP 401. Local `npm run dev` continues to work without this gate.
+This is a **single-owner testing mode, NOT public registration/authentication**.
+
+To enable the private cloud preview, set **all** of these encrypted
+Production Environment Variables in Vercel Project → Settings → Environment
+Variables. Restart/redeploy after setting them:
+
+| Variable | Required | Description |
+|---|---|---|
+| `SEE_PREVIEW_PASSWORD` | yes | Unique passphrase of at least 20 characters; enter only on private login screen |
+| `SEE_PREVIEW_SESSION_SECRET` | yes | Independently generated secret, at least 32 characters; use `openssl rand -hex 32` |
+| `UPSTASH_REDIS_REST_URL` | yes | Upstash Redis HTTPS REST endpoint (`*.upstash.io`) |
+| `UPSTASH_REDIS_REST_TOKEN` | yes | Upstash Redis REST token; keep server-side |
+| `ASSISTANT_PROVIDER=deepseek` | yes for cloud chat | Ollama remains local-only |
+| `DEEPSEEK_MODEL=deepseek-flash` | recommended | Low-cost model |
+| `DEEPSEEK_API_KEY` | yes for cloud chat | Your new DeepSeek API key, server-side only |
+| `DEEPSEEK_CHAT_ENABLED=true` | yes for cloud chat | Explicit opt-in after protective login and distributed quota |
+| `ALPACA_PAPER_KEY_ID`, `ALPACA_PAPER_SECRET_KEY` | optional for research | Read-only Research stocks/news; **never share personal Paper positions** |
+| `SEC_USER_AGENT` | optional for SEC facts | Descriptive app identification and a real contact email |
+
+**Private Beta capacity and limitations:**
+
+- Paid AI is capped across all Vercel serverless instances to **6 requests
+  per minute and 60 per UTC day** with atomic Redis counters. Owner login
+  attempts are also capped. If Redis fails, paid AI and new logins fail
+  closed, rather than bypassing the quota. Limits are intentionally low;
+  they are not a guarantee against all provider charges.
+- Research search, historical charts, news, company fundamentals and
+  reports become available only inside the private owner session, subject to
+  actual SEC/Alpaca access and any market-data license. Market data may be
+  delayed and is NOT a real-time consolidated quote.
+- Private Alpaca Paper account/history, portfolio risk/valuation/dividend
+  endpoints and any trading functionality remain **disabled in production**.
+  Personal Paper account data is never sent to DeepSeek.
+- Do NOT use this private mode for public user signup. The eventual
+  public beta needs real per-user identity, scoped data ownership,
+  database isolation, rate limits per user, privacy notices and data
+  redistribution authorization. Never set `NEXT_PUBLIC_` on a secret.
+- Keep Vercel Deployment Protection enabled as an additional outer barrier,
+  ideally including production if your plan supports it. Test with an
+  incognito window: the owner access page should appear before any SEE
+  Research or AI APIs are accessible. Rotate any Alpaca credentials that
+  appeared in past screenshots before entering new ones.
+- Login is at `/private-preview`; there is a sign-out button in the cloud
+  workspace header. Owner sessions expire after 12 hours. If you lose the
+  password, update the encrypted Vercel env and redeploy. Change the signing
+  secret to invalidate existing sessions.
+
 ## AI Assistant — optional DeepSeek integration
 
 The top-level AI Assistant workspace uses a server-only DeepSeek Chat Completions
