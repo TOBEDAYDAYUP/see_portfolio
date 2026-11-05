@@ -45,3 +45,10 @@ export function portfolioHistoryRequestPath(
  }
  return historyPath+"?"+params.toString();
 }
+
+/** Honest lower-resolution fallback only when Alpaca rejects an intraday request. */
+export function portfolioHistoryFallbackPath(range:PortfolioHistoryRange):string|null{
+ if(range==="1D")return historyPath+"?period=1D&timeframe=1H&intraday_reporting=market_hours";
+ if(range==="1W")return historyPath+"?period=1W&timeframe=1D";
+ return null;
+}
