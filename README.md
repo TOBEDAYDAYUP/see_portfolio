@@ -13,8 +13,11 @@ history endpoint. For the graph, each observation is the **change in
 broker-reported P/L since the first valid visible snapshot**; it is not a
 fabricated price or broker-independent performance estimate. Each selected
 range reflects the actual observations available from Alpaca, and 5D
-continues to mean the latest five observed NY trading sessions. The
-interface also displays account equity, the total current unrealized P/L
+continues to mean the latest five observed NY trading sessions. Because
+Alpaca resets sub-daily P/L at each trading day by default, **5D Returns
+uses a separate daily P/L series** rather than subtracting hourly
+per-day P/L resets; the Holdings 5D equity chart remains hourly.
+The interface also displays account equity, the total current unrealized P/L
 from Alpaca's open positions, a diagnostic P/L movement relative to
 opening equity, and a per-position P/L table. When no trade has settled,
 there are honest empty states. Refresh re-reads the paper account.
