@@ -44,16 +44,14 @@ export function calculateEquityCashFlowDCF(a:DCFAssumptions):DCFResult|null{
  const growth=a.growthRatePct/100;
  const requiredReturn=a.costOfEquityPct/100;
  const terminalGrowth=a.terminalGrowthPct/100;
- const projectedYears:DCFYear[]=[];
- let flow=a.baseCashFlowUsd;
- let pvForecastUsd=0;
- for(let year=1;year<=1;year++){
-  flow*=1+growth;
-  const discounted=flow/(1+requiredReturn)**year;
-  if(!finite(flow)||!finite(discounted))return null;
-  projectedYears.push({year,projectedCashFlowUsd:flow,presentValueUsd:discounted});
-  pvForecastUsd+=discounted;
- }
+ const flow=a.baseCashFlowUsd*(1+growth);
+ const pvForecastUsd=flow/(1+requiredReturn);
+ if(!finite(flow)||!finite(pvForecastUsd))return null;
+ const projectedYears:DCFYear[]=[{
+  year:1,projectedCashFlowUsd:flow,presentValueUsd:pvForecastUsd,
+ }];
+ // All cash flows after year one are summarized by a terminal perpetuity.
+ // This simplified model is sensitive to the assumed perpetual growth rate.
  const terminalValueAtYearOneUsd=flow*(1+terminalGrowth)/(requiredReturn-terminalGrowth);
  const pvTerminalUsd=terminalValueAtYearOneUsd/(1+requiredReturn);
  const estimatedEquityValueUsd=pvForecastUsd+pvTerminalUsd;
