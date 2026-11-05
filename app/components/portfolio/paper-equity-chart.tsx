@@ -1,5 +1,6 @@
 import type { PortfolioHistoryPoint } from "../../../lib/alpaca/types";
 import type { PortfolioHistoryRange } from "../../../lib/alpaca/history-range";
+import {historyXAxisTickIndices} from "../../../lib/alpaca/history-display";
 
 const dollar=(value:number)=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:2}).format(value);
 
@@ -17,11 +18,19 @@ export default function PaperEquityChart({points,range}:{points:PortfolioHistory
   }));
   const pointString=coords.map(p=>p.x.toFixed(1)+","+p.y.toFixed(1)).join(" ");
   const areaString=left+","+(height-bottom)+" "+pointString+" "+coords[coords.length-1].x.toFixed(1)+","+(height-bottom);
-  const first=points[0], last=points[points.length-1];
-  const axisLabel=(timestamp:number)=>new Date(timestamp*1000).toLocaleString("en-CA",
-    range==="1D"
-      ?{hour:"numeric",minute:"2-digit",timeZone:"America/New_York"}
-      :{month:"short",day:"numeric",timeZone:"America/New_York"});
+  const tickIndices=historyXAxisTickIndices(points,range);
+  const axisLabel=(timestamp:number)=>{
+    const date=new Date(timestamp*1000);
+    if(range==="1D")return date.toLocaleTimeString("en-CA",{
+      hour:"numeric",minute:"2-digit",timeZone:"America/New_York"});
+    if(range==="5D")return date.toLocaleDateString("en-CA",{
+      weekday:"short",month:"short",day:"numeric",timeZone:"America/New_York"});
+    return date.toLocaleDateString("en-CA",{
+      month:"short",day:"numeric",
+      ...(range==="ALL"||range==="1Y"?{year:"2-digit" as const}:{}),
+      timeZone:"America/New_York",
+    });
+  };
   return <div className="mt-2 overflow-x-auto">
     <svg viewBox={"0 0 "+width+" "+height} role="img" aria-label={"Alpaca Paper account equity history over "+range} className="min-w-[460px] w-full">
       <defs><linearGradient id="paperHistoryArea" x1="0" y1="0" x2="0" y2="1">
@@ -35,8 +44,9 @@ export default function PaperEquityChart({points,range}:{points:PortfolioHistory
       <polygon points={areaString} fill="url(#paperHistoryArea)"/>
       <polyline points={pointString} fill="none" stroke="#4ac8b7" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
       <circle cx={coords[coords.length-1].x} cy={coords[coords.length-1].y} r="4.5" fill="#77dfd0"/>
-      <text x={left} y={height-7} fontSize="12" fill="#94a3b8">{axisLabel(first.timestamp)}</text>
-      <text x={width-right} y={height-7} textAnchor="end" fontSize="12" fill="#94a3b8">{axisLabel(last.timestamp)}</text>
+      {tickIndices.map((index,i)=><text key={index} x={coords[index].x} y={height-7}
+        textAnchor={i===0?"start":i===tickIndices.length-1?"end":"middle"}
+        fontSize="12" fill="#94a3b8">{axisLabel(points[index].timestamp)}</text>)}
     </svg>
   </div>;
 }
