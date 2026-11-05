@@ -82,7 +82,7 @@ export async function POST(request: Request) {
 
   // Only the app's own read-only services decide what data is relevant:
   // the model cannot choose arbitrary URLs, invoke tools or place trades.
-  const context = await loadAssistantContext(messages.messages,config.provider)
+  const context = await loadAssistantContext(messages.messages,config.provider==="ollama"?"ollama":"deepseek")
     .catch(()=>({evidence:[],notes:["Research data services are unavailable. Do not claim verified market information."]}));
   const facts = formatAssistantEvidence(context.evidence);
   const dataPrompt = facts
