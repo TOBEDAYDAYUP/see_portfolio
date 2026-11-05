@@ -4,6 +4,32 @@ A lightweight investment research prototype built with **Next.js 16, React 19, T
 
 > **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
 
+## Research DCF v0.1 — five-year equity cash-flow scenario model
+
+Research → Stock Reports → Company Fundamentals now includes an interactive
+five-year discounted cash-flow panel. It starts from **verified SEC 10-Q TTM
+or recent 10-K annual operating cash flow minus reported PP&E purchases**
+and a validated, dated SEC issuer-level outstanding-share count. Users
+explicitly adjust five-year annual cash-flow growth, **cost of equity**, and
+terminal growth. The panel shows projected annual cash flows, their present
+values, Gordon-growth terminal value, modeled equity value per share,
+scenario upside/downside against the dated Alpaca IEX close, and a 3×3
+discount-rate/terminal-growth sensitivity matrix. Invalid and missing
+inputs produce no invented valuation.
+
+**Important limitation:** This is a simplified **equity cash-flow proxy DCF**.
+CFO minus capex omits net borrowing, so it is not a fully reconciled FCFE.
+It is also NOT an unlevered FCFF/WACC enterprise valuation and must not be
+represented as one. It assumes constant projected growth, unchanged shares
+and investor-supplied—not verified analyst—discount/growth rates.
+Negative cash flow, stale or unavailable share snapshots, and unsupported
+multiple-share-class issuers are withheld. The prototype is unsuitable for
+some sectors, especially banks/insurers. No security recommendation or
+independently validated price target is generated.
+
+Pure calculation tests: `node --experimental-strip-types --test tests/dcf.test.mjs`.
+No new third-party key, dependency or data endpoint is introduced.
+
 ## Portfolio Valuation & Dividends v1 · multi-source
 
 Portfolio → Valuation now reads **actual Alpaca Paper holdings**, applies the same
@@ -36,7 +62,7 @@ the page discloses partial coverage and original data providers.
 
 Portfolio account APIs remain **local-development-only** until secure user
 authentication is implemented. No paper trades/orders are placed and no
-private API keys are serialized to clients. DCF and validated price targets
+private API keys are serialized to clients. Full FCFF/WACC DCF and validated price targets
 remain out of scope. Local end-to-end credentials and any provider tier
 restrictions still need to be verified.
 
@@ -77,7 +103,7 @@ FY metrics and future-model placeholders are collapsed to prioritize current dat
 
 Existing Portfolio holdings, paper P/L, VaR/ES and brokerage permissions remain
 unchanged. Local-only API restrictions and existing SEC_USER_AGENT setup remain.
-No DCF, 12-month forecast, Forward P/E or EV/EBITDA is implemented. Model inputs
+No full FCFF/WACC DCF, 12-month forecast, Forward P/E or EV/EBITDA is implemented. Model inputs
 and the local user's SEC and Alpaca connectivity still require end-to-end verification.
 
 ### Previous annual-only approach (v0.1)
