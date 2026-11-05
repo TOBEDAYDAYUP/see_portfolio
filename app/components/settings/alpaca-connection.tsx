@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import {interpretConnectionCheck} from "../../../lib/alpaca/connection-check";
 
 type CheckResult = "idle" | "checking" | "connected" | "not_configured" | "error";
 export default function AlpacaConnection() {
@@ -8,22 +9,21 @@ export default function AlpacaConnection() {
   const [message,setMessage]=useState("");
   const check=()=>{
     setState("checking");
-    void fetch("/api/alpaca/portfolio", {cache:"no-store"})
-      .then(async response => {
-        const result: unknown=await response.json();
-        if (!result || typeof result!=="object" || !("status" in result)) throw new Error("Invalid API response");
-        if(result.status==="connected"){
-          setState("connected");
-          const holdings="positions" in result && Array.isArray(result.positions) ? result.positions.length : 0;
-          setMessage("Alpaca Paper connection successful. Open positions: "+holdings+".");
-        } else if(result.status==="not_configured"){
-          setState("not_configured");
-          setMessage("Keys not found in .env.local. Add both credentials and restart npm run dev.");
-        } else {
-          setState("error");
-          setMessage("message" in result && typeof result.message==="string" ? result.message : "Cannot connect to Alpaca Paper.");
-        }
-      }).catch(()=>{setState("error");setMessage("Could not reach the local Alpaca API.");});
+    setMessage("");
+    void (async()=>{
+      try{
+        const response=await fetch("/api/alpaca/portfolio",{cache:"no-store"});
+        const responseText=await response.text();
+        const result=interpretConnectionCheck(response.status,responseText);
+        setState(result.state);
+        setMessage(result.message);
+      }catch(error){
+        setState("error");
+        setMessage(error instanceof TypeError
+          ?"Network request failed. Verify that the local Next.js dev server is running, then try again."
+          :"Could not read the local Alpaca API response. Check the npm run dev terminal and browser Network tab.");
+      }
+    })();
   };
   return <section className="surface-panel rounded-2xl border border-white/10 bg-[#172338] p-5 sm:p-6 2xl:col-span-2">
     <div className="flex flex-wrap items-start justify-between gap-3">
