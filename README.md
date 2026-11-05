@@ -4,6 +4,28 @@ A lightweight investment research prototype built with **Next.js 16, React 19, T
 
 > **Data notice:** Portfolio holdings use read-only Alpaca Paper Trading data. Research charts/news use Alpaca market data, and optional fundamentals use SEC EDGAR filings. Twelve-month forecasts and notifications remain unimplemented; no trading or order execution is connected.
 
+## Chart inspection overlays and light-theme readability
+
+The Portfolio equity chart retains its original **800 × 348 viewBox** and
+original plot insets (left 91, right 18, top 22, bottom 43). Crosshair
+labels are now high-contrast, light-gray/near-black **floating HTML
+overlays** above the SVG, so labels do not compress or clip the plot;
+they may overlap the surrounding card. Timestamp labels remain in
+New York exchange time, and USD values are sourced only from the
+selected actual Alpaca equity snapshot.
+
+Research → Stock Reports → Price & Trading Volume now has the same
+floating time and close-price labels for Candlesticks, Line and OHLC
+modes. The inspect date reflects the visible *bucket's* source interval
+when raw OHLCV bars were aggregated; the displayed close is the final
+source close for that bucket. Existing zoom, pan, volume and OHLC labels
+remain intact. No raw quotes or trades are invented.
+
+In light mode, DCF assumptions use white, high-contrast input fields.
+Only the **Research** desktop sidebar changes to a very pale mint with
+dark text and distinct selection/hover states; the Portfolio sidebar
+and dark-theme styling stay as before.
+
 ## Portfolio equity chart · selectable history windows
 
 Portfolio → Holdings → Portfolio value over time provides five clickable

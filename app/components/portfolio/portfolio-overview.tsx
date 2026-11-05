@@ -107,7 +107,7 @@ export default function PortfolioOverview({account,history,historyAvailable,posi
     {name:"Open positions",value:String(positionCount),detail:"Alpaca Paper"},
   ];
   return <div className="grid gap-5 xl:grid-cols-[minmax(0,2.15fr)_minmax(235px,0.85fr)]">
-    <section className="min-w-0 rounded-2xl border border-white/10 bg-[#172338] surface-panel p-4 sm:p-5">
+    <section className="relative z-10 min-w-0 overflow-visible rounded-2xl border border-white/10 bg-[#172338] surface-panel p-4 sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h2 className="font-semibold">Portfolio value over time</h2>

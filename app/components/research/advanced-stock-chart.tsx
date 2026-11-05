@@ -5,7 +5,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { CHART_RANGES } from "../../../lib/research/chart-utils";
 import { MIN_ZOOM_BARS, zoomChartViewport, panChartViewport, dragChartViewport, classifyChartWheel } from "../../../lib/research/chart-viewport";
 import { TARGET_VISIBLE_BARS, bucketVisibleChartBars } from "../../../lib/research/chart-density";
-import type { ChartPayload, ChartRange, ChartBar } from "../../../lib/research/chart-utils";
+import type { ChartPayload, ChartRange } from "../../../lib/research/chart-utils";
 
 type Mode="candles"|"line"|"bars";
 type ChartResponse={status:"ok";data:ChartPayload}|{status:"error"|"not_configured";message:string};
@@ -21,6 +21,14 @@ function timeLabel(time:string,intraday:boolean){
     timeZone:"America/New_York",month:"short",day:"numeric",
     ...(intraday?{hour:"numeric" as const,minute:"2-digit" as const}:{year:"numeric" as const}),
   }).format(dt);
+}
+function inspectionTimestamp(time:string,intraday:boolean){
+  const date=new Date(time);
+  if(!Number.isFinite(date.getTime()))return time;
+  return new Intl.DateTimeFormat("en-US",{
+    timeZone:"America/New_York",year:"numeric",month:"short",day:"numeric",
+    ...(intraday?{hour:"numeric" as const,minute:"2-digit" as const,timeZoneName:"short" as const}:{}),
+  }).format(date);
 }
 function pricePosition(price:number,low:number,high:number){
   return PRICE_TOP+(high-price)/(high-low)*(PRICE_BOTTOM-PRICE_TOP);
@@ -95,6 +103,12 @@ function HistoryChart({payload,mode,showVolume}:{
     ? timeLabel(focusedGroup.firstTime,intraday)+
       (focusedGroup.firstTime===focusedGroup.lastTime?"":" – "+timeLabel(focusedGroup.lastTime,intraday))
     : "No history";
+  // For aggregated OHLCV buckets show the source interval, not a fake single
+  // trade timestamp. The value is the last source close in the bucket.
+  const inspectorDates=focusedGroup
+    ? inspectionTimestamp(focusedGroup.firstTime,intraday)+
+      (focusedGroup.firstTime===focusedGroup.lastTime?"":" – "+inspectionTimestamp(focusedGroup.lastTime,intraday))
+    : "";
   function canvasX(e:ReactPointerEvent<SVGSVGElement>):number{
     const bounds=e.currentTarget.getBoundingClientRect();
     return (e.clientX-bounds.left)/bounds.width*W;
@@ -164,6 +178,7 @@ function HistoryChart({payload,mode,showVolume}:{
         }}>→</button>
       </div>
     </div>
+    <div className="relative overflow-visible">
     <svg ref={chartRef} viewBox={"0 0 "+W+" "+H} role="img"
       aria-label={"Interactive "+payload.interval+" stock price and volume chart. Two-finger swipes scroll the page; pinch to zoom; when zoomed in, press and hold with one finger or the mouse button, then drag left or right to pan the timeline. No box selection."}
       tabIndex={0} className={"w-full touch-pan-y select-none rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[#7ce0cc] "+(isDragging?"cursor-grabbing":zoom?"cursor-grab":"cursor-crosshair")}
@@ -216,12 +231,25 @@ function HistoryChart({payload,mode,showVolume}:{
       {focused&&currentHover!==null&&<>
         <line x1={x(currentHover)} x2={x(currentHover)} y1={PRICE_TOP} y2={showVolume?VOL_BOTTOM:PRICE_BOTTOM}
           stroke="#a3b6ca" strokeDasharray="4 4" strokeWidth="1.2"/>
-        <line x1={L} x2={W-R} y1={pricePosition(focused.close,low,high)} y2={pricePosition(focused.close,low,high)}
-          stroke="#a3b6ca" strokeDasharray="3 5" opacity=".5"/>
+        <line x1={x(currentHover)} x2={W-R} y1={pricePosition(focused.close,low,high)} y2={pricePosition(focused.close,low,high)}
+          stroke="#59bcb2" strokeDasharray="4 5" strokeWidth="1.1" opacity=".9"/>
+        <circle cx={x(currentHover)} cy={pricePosition(focused.close,low,high)}
+          r="4.5" fill="#f0fffa" stroke="#159b8d" strokeWidth="2" pointerEvents="none"/>
       </>}
       <text x={L} y={H-17} fontSize="12" fill="#879db0">{timeLabel(visible[0].time,intraday)}</text>
       <text x={W-R} y={H-17} fontSize="12" fill="#879db0" textAnchor="end">{timeLabel(density.buckets.at(-1)!.lastTime,intraday)}</text>
     </svg>
+    {currentHover!==null&&focused&&<>
+      <div className="chart-inspector-label chart-inspector-date pointer-events-none absolute z-50 whitespace-nowrap"
+        style={{left:(x(currentHover)/W*100)+"%"}}>
+        {inspectorDates}
+      </div>
+      <div className="chart-inspector-label chart-inspector-value pointer-events-none absolute z-50 whitespace-nowrap"
+        style={{left:((W-R)/W*100)+"%",top:(pricePosition(focused.close,low,high)/H*100)+"%"}}>
+        Close {money(focused.close)}
+      </div>
+    </>}
+    </div>
     <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
       <span>{visible.length} / {TARGET_VISIBLE_BARS} candles · {density.rawCount} source bars · two-finger scrolls page · pinch to zoom · click-and-hold + drag ←→ to pan when zoomed</span>
       <span>{zoom?"Zoomed interval":"Full selected period"} · OHLCV aggregation</span>

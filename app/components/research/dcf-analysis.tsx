@@ -23,7 +23,7 @@ function Input({label,value,setValue,min,max,step,description}:{
   <span className="mt-3 flex items-center gap-2">
    <input type="number" value={value} min={min} max={max} step={step}
     onChange={event=>setValue(Number(event.target.value))}
-    className="min-w-0 w-full rounded-lg border border-white/15 bg-[#102038] px-3 py-2 text-base font-semibold text-slate-100 tabular-nums outline-none focus:border-[#83e3cd]"
+    className="surface-field dcf-assumption-input min-w-0 w-full rounded-lg border px-3 py-2 text-base font-semibold tabular-nums focus-visible:outline-2 focus-visible:outline-offset-2"
     aria-label={label}/>
    <span className="text-sm text-slate-400">%</span>
   </span>
