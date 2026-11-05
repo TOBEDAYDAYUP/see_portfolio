@@ -32,7 +32,7 @@ export default function Home() {
     <div className="mx-auto flex min-h-[calc(100vh-72px)] max-w-[1600px]">
       {workspace==="portfolio"&&<Sidebar page={page} go={go} t={t}/>}
       {workspace==="research"&&<ResearchSidebar page={researchPage} go={goResearch} t={t}/>}
-      <main className="min-w-0 flex-1 px-5 pb-16 pt-7 sm:px-7 lg:px-7">
+      <main className={"min-w-0 flex-1 px-5 pb-16 sm:px-7 lg:px-7 "+(workspace==="portfolio"&&page==="holdings"?"pt-3":"pt-7")}>
         {(workspace==="portfolio"||workspace==="research")&&<MobileNavigation page={page} go={go} t={t} workspace={workspace} researchPage={researchPage} goResearch={goResearch}/>}
         {workspace==="portfolio"&&page!=="holdings"&&page!=="analysis"&&<div className="mb-7 rounded-xl border border-slate-500/30 bg-[#1c2a40] surface-panel px-4 py-3 text-xs leading-5 text-slate-300"><strong className="text-[#a4f1df]">{t("Sample data notice.","示例数据说明。")}</strong> {t("Market figures and news in unfinished modules are fictional placeholders. No live AI scores or push notifications are connected yet.","未完成模块中的行情与新闻为虚构示例数据。尚未连接实时 AI 评分或实际消息推送。")}</div>}
         {workspace==="portfolio"&&portfolioLinks.some(link=>link.id===page)&&<PortfolioDashboard section={page as PortfolioSection} currency={currency} onSettings={()=>go("settings")}/>}
