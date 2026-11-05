@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect,useState} from "react";
+import {useState} from "react";
 import type {KeyboardEvent as ReactKeyboardEvent,PointerEvent as ReactPointerEvent} from "react";
 import type { PortfolioHistoryPoint } from "../../../lib/alpaca/types";
 import type { PortfolioHistoryRange } from "../../../lib/alpaca/history-range";
@@ -13,7 +13,6 @@ const dollar=(value:number)=>new Intl.NumberFormat("en-US",{style:"currency",cur
 export default function PaperEquityChart({points,range}:{points:PortfolioHistoryPoint[];range:PortfolioHistoryRange}) {
   const [hoveredIndex,setHoveredIndex]=useState<number|null>(null);
   const [pinnedIndex,setPinnedIndex]=useState<number|null>(null);
-  useEffect(()=>{setHoveredIndex(null);setPinnedIndex(null);},[points,range]);
   if (points.length < 2) return <p className="py-10 text-center text-sm text-slate-400">Not enough account history is available to draw a chart.</p>;
   // Reserve a narrow tooltip strip ABOVE and to the RIGHT of the plot.
   // Existing three Y-axis labels and five X-axis dates remain unchanged.
