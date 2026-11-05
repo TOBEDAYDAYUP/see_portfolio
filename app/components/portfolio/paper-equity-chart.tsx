@@ -14,9 +14,8 @@ export default function PaperEquityChart({points,range}:{points:PortfolioHistory
   const [hoveredIndex,setHoveredIndex]=useState<number|null>(null);
   const [pinnedIndex,setPinnedIndex]=useState<number|null>(null);
   if (points.length < 2) return <p className="py-10 text-center text-sm text-slate-400">Not enough account history is available to draw a chart.</p>;
-  // Reserve a narrow tooltip strip ABOVE and to the RIGHT of the plot.
-  // Existing three Y-axis labels and five X-axis dates remain unchanged.
-  const width=800, height=348, left=91, right=120, top=49, bottom=43;
+  // Restore original full-width plot: tooltips float above the SVG rather than consuming chart space.
+  const width=800, height=348, left=91, right=18, top=22, bottom=43;
   const values=points.map(p=>p.equity);
   const min=Math.min(...values), max=Math.max(...values);
   const pad=Math.max((max-min)*0.12, max*0.01, 1);
@@ -77,11 +76,7 @@ export default function PaperEquityChart({points,range}:{points:PortfolioHistory
   };
   const dateLabel=active?formatHistoryCrosshairTime(active.point.timestamp):"";
   const valueLabel=active?dollar(active.point.equity):"";
-  const dateWidth=236, dateX=active
-    ?Math.max(left,Math.min(width-dateWidth-5,active.coord.x-dateWidth/2)):0;
-  const priceTop=active
-    ?Math.max(top,Math.min(height-bottom-25,active.coord.y-13)):0;
-  return <div className="mt-2 overflow-x-auto">
+  return <div className="relative isolate mt-2 overflow-visible">
     <svg viewBox={"0 0 "+width+" "+height} role="img"
       tabIndex={0}
       aria-label={"Interactive Alpaca Paper equity history over "+range+". Hover near the line or click to inspect a recorded equity value. Arrow keys move between snapshots; Escape clears selection."}
@@ -104,27 +99,28 @@ export default function PaperEquityChart({points,range}:{points:PortfolioHistory
       <circle cx={coords[coords.length-1].x} cy={coords[coords.length-1].y} r="4.5" fill="#77dfd0"/>
       {active&&<g pointerEvents="none">
         {/* Read-only crosshair snaps to a real account equity observation. */}
-        <line x1={active.coord.x} y1={top-8} x2={active.coord.x} y2={height-bottom}
+        <line x1={active.coord.x} y1={top} x2={active.coord.x} y2={height-bottom}
           stroke="#49bdae" strokeWidth="1.25" strokeDasharray="5 5" opacity=".85"/>
-        <line x1={active.coord.x} y1={active.coord.y} x2={width-right+6} y2={active.coord.y}
+        <line x1={active.coord.x} y1={active.coord.y} x2={width-right} y2={active.coord.y}
           stroke="#49bdae" strokeWidth="1.25" strokeDasharray="5 5" opacity=".85"/>
         <circle cx={active.coord.x} cy={active.coord.y} r="6.5"
           fill="#f0fffa" stroke="#159b8d" strokeWidth="2.5"/>
-        {/* Time is at the TOP; DST-aware New York local timestamp. */}
-        <rect x={dateX} y="5" width={dateWidth} height="30" rx="8"
-          fill="#173d48" stroke="#4ac8b7" strokeOpacity=".65"/>
-        <text x={dateX+dateWidth/2} y="24" textAnchor="middle" fontSize="12"
-          fontWeight="600" fill="#defcf5">{dateLabel}</text>
-        {/* Equity belongs to the right-hand price callout, not the Y-axis ticks. */}
-        <rect x={width-right+8} y={priceTop} width={right-13} height="26" rx="7"
-          fill="#173d48" stroke="#4ac8b7" strokeOpacity=".65"/>
-        <text x={width-right+8+(right-13)/2} y={priceTop+17} textAnchor="middle"
-          fontSize="11" fontWeight="600" fill="#defcf5">{valueLabel}</text>
       </g>}
       {tickIndices.map((index,i)=><text key={index} x={coords[index].x} y={height-7}
         textAnchor={i===0?"start":i===tickIndices.length-1?"end":"middle"}
         fontSize="12" fill="#94a3b8">{axisLabel(points[index].timestamp)}</text>)}
     </svg>
+    {active&&<>
+      {/* Foreground HTML overlays do not reduce the original SVG plot width/height. */}
+      <div className="chart-inspector-label chart-inspector-date pointer-events-none absolute z-50 whitespace-nowrap"
+        style={{left:(active.coord.x/width*100)+"%"}}>
+        {dateLabel}
+      </div>
+      <div className="chart-inspector-label chart-inspector-value pointer-events-none absolute z-50 whitespace-nowrap"
+        style={{left:((width-right)/width*100)+"%",top:(active.coord.y/height*100)+"%"}}>
+        {valueLabel}
+      </div>
+    </>}
     {pinnedIndex!==null&&pinnedIndex>=0&&pinnedIndex<points.length&&<p className="sr-only" aria-live="polite">{formatHistoryCrosshairTime(points[pinnedIndex].timestamp)} · {dollar(points[pinnedIndex].equity)} account equity.</p>}
   </div>;
 }
