@@ -20,10 +20,10 @@ export default function PortfolioDashboard({section,currency="USD",onSettings}:{
 }) {
   const [notice,setNotice]=useState("");
   return <div>
-    <div className={(section==="holdings"?"mb-0":"mb-7")+" flex flex-wrap items-end justify-between gap-4"}>
-      <div>
+    <div className={(section==="holdings"?"mb-3":"mb-7")+" flex flex-wrap items-end justify-between gap-4"}>
+      <div className={section==="holdings"?"pt-[10px]":undefined}>
         {section!=="holdings"&&<p className="mb-2 text-[11px] font-bold tracking-[.18em] text-[#87e5d1]">PORTFOLIO WORKSPACE</p>}
-        <h1 className={"text-3xl font-semibold sm:text-[38px]"+(section==="holdings"?" relative top-[10px]":"")}>My Portfolio</h1>
+        <h1 className="text-3xl font-semibold sm:text-[38px]">My Portfolio</h1>
         {section!=="holdings"&&<p className="mt-2 text-sm text-slate-400">{section==="analysis"?"Risk analytics for your Alpaca Paper positions":labels[section]}</p>}
       </div>
       {section==="holdings" ? (
