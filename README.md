@@ -11,8 +11,13 @@ time ranges: **1D, 1W, 1M, 1Y, ALL** (default: 1M). Selected windows
 request real Alpaca Paper account equity snapshots with **5-minute** bars
 for 1D, **hourly** bars for 1W, and **daily** snapshots for longer ranges.
 Alpaca's annual API period is `1A` (mapped from the 1Y UI label). ALL
-requests daily history beginning at the actual account's `created_at`,
-without inventing pre-account equity or a fixed multi-year horizon.
+requests daily history from the actual account's `created_at` through an
+explicit current-time `end` (omitting `end` can default to a month), without
+inventing pre-account equity or a fixed multi-year horizon.
+If Alpaca rejects the high-frequency 1D/1W requests, the app tries actual
+lower-resolution Alpaca hourly/daily data and labels it as a fallback; it
+never interpolates or invents account equity. Failures show a diagnostic
+HTTP/endpoint status and a retry button rather than an opaque generic error.
 
 The chart preserves honest missing-data states. Fewer than two snapshots
 means no line is drawn. The 1D chart labels the X axis in New York trading
