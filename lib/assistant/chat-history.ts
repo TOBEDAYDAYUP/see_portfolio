@@ -47,7 +47,24 @@ export function parseAssistantHistory(raw:unknown):AssistantHistory|null{
    const msg=rawMessage as Record<string,unknown>;
    if((msg.role!=="assistant"&&msg.role!=="user")||typeof msg.content!=="string"||
      msg.content.length>MAX_MESSAGE_CHARS)continue;
-   messages.push({role:msg.role,content:msg.content});
+   const sources:Array<AssistantEvidence>=[];
+   if(Array.isArray(msg.evidence)){
+    for(const v of msg.evidence.slice(0,8)){
+     if(!v||typeof v!=="object"||Array.isArray(v))continue;
+     const e=v as Record<string,unknown>;
+     if(typeof e.id==="string"&&typeof e.title==="string"&&typeof e.source==="string"&&
+       typeof e.asOf==="string"&&typeof e.summary==="string"){
+      const url=typeof e.url==="string"&&/^https:\/\//.test(e.url)&&e.url.length<600?e.url:undefined;
+      sources.push({id:e.id.slice(0,10),title:e.title.slice(0,130),
+       source:e.source.slice(0,130),asOf:e.asOf.slice(0,80),summary:e.summary.slice(0,1400),
+       ...(url?{url}:{})});
+     }
+    }
+   }
+   const dataNotes=Array.isArray(msg.dataNotes)?msg.dataNotes.filter(
+    (x):x is string=>typeof x==="string").slice(0,5).map(x=>x.slice(0,400)):[];
+   messages.push({role:msg.role,content:msg.content,
+    ...(sources.length?{evidence:sources}:{}),...(dataNotes.length?{dataNotes}:{})});
   }
   threads.push({id:thread.id,title:typeof thread.title==="string"?
    thread.title.slice(0,80):defaultTitle,updatedAt:typeof thread.updatedAt==="number"&&
